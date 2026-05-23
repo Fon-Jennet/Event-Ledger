@@ -43,7 +43,7 @@ export default function ProfilePage() {
         name: profile.name || "",
         phone: profile.phone || "",
         address: profile.address || "",
-        photoURL: profile.photoURL || "",
+        photoURL: profile.photoUrl || "",
       });
     }
   }, [profile]);
@@ -72,7 +72,7 @@ export default function ProfilePage() {
     setStatus({ type: null, message: "" });
 
     try {
-      const storageRef = ref(storage, `avatars/${user.id}`);
+      const storageRef = ref(storage, `avatars/${profile!.id}`);
       await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
 

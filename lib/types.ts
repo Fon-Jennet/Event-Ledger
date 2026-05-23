@@ -5,6 +5,8 @@ export interface UserProfile {
   role: "admin" | "organizer" | "attendee";
   createdAt: number;
   photoUrl?: string;
+  phone: string;
+  address: string;
 }
 
 export interface Event {
