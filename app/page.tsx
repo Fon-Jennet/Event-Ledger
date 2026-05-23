@@ -58,6 +58,7 @@ export default function LandingPage() {
               >
                 Features
               </a>
+
               <a
                 href="#audience"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
@@ -94,7 +95,6 @@ export default function LandingPage() {
         <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
             <Zap className="w-3.5 h-3.5 text-purple-500" />
-            <span className="leading-none">Find Your Next Experience</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 mb-6">
@@ -111,15 +111,9 @@ export default function LandingPage() {
               href="/signup"
               className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
-              Start for Free
+              Get Started
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <a
-              href="#features"
-              className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-bold text-lg transition-colors shadow-sm"
-            >
-              See How It Works
-            </a>
           </div>
         </section>
 

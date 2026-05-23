@@ -155,9 +155,9 @@ export function Sidebar() {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 ${isProfileActive ? "border-purple-400" : "border-slate-600"}`}
                 >
-                  {profile.photoURL ? (
+                  {profile.photoUrl ? (
                     <img
-                      src={profile.photoURL}
+                      src={profile.photoUrl}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
@@ -184,12 +184,6 @@ export function Sidebar() {
             </Link>
 
             {/* 5. Attach the handleSignOut function here */}
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all font-medium text-sm"
-            >
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
           </div>
         )}
       </aside>
