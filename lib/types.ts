@@ -23,6 +23,7 @@ export interface Event {
   createdAt: number;
   updatedAt: number;
   imageUrl?: string;
+  eventType: "concert" | "conference" | "workshop" | "festival" | "other";
 }
 
 export interface Ticket {
