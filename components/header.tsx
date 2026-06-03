@@ -78,17 +78,21 @@ export function Header({
   };
 
   return (
-    <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-50">
-      <div className="flex items-center gap-4">
-        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-        {badges.map((b, i) => (
-          <div
-            key={i}
-            className="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase"
-          >
-            {b}
-          </div>
-        ))}
+    <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-50">
+      <div className="flex items-center gap-3 min-w-0">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-800 truncate">
+          {title}
+        </h2>
+        <div className="flex items-center gap-2 flex-wrap max-w-full">
+          {badges.map((b, i) => (
+            <div
+              key={i}
+              className="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase"
+            >
+              {b}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="flex items-center gap-6">
         <div className="relative" ref={dropdownRef}>
