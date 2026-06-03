@@ -10,7 +10,7 @@ import {
   onSnapshot,
   doc,
   deleteDoc,
-} from "firebase/firestore"; // Added onSnapshot
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Event } from "@/lib/types";
 import {
@@ -50,8 +50,7 @@ export default function EventsPage() {
       return;
     }
 
-    // 🟢 REAL-TIME LISTENER: Replaces getDocs()
-    // This automatically updates the UI the moment an event is edited, created, or deleted.
+    // 🟢 REAL-TIME LISTENER
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
@@ -81,8 +80,6 @@ export default function EventsPage() {
     )
       return;
     try {
-      // Note: We don't need to manually filter the state array anymore!
-      // Deleting the document triggers the onSnapshot listener, which updates the UI automatically.
       await deleteDoc(doc(db, "events", eventId));
       toast.success("Event deleted successfully");
     } catch (error: any) {
