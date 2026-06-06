@@ -183,7 +183,18 @@ export function Sidebar() {
               />
             </Link>
 
-            {/* 5. Attach the handleSignOut function here */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex items-center justify-between w-full p-3 rounded-xl transition-all duration-200 hover:bg-slate-800 border border-transparent hover:border-red-700"
+            >
+              <span className="flex items-center gap-3">
+                <LogOut className="w-5 h-5 text-slate-300" />
+                <span className="text-sm font-semibold text-slate-200 group-hover:text-red-500 transition-colors">
+                  Sign out
+                </span>
+              </span>
+            </button>
           </div>
         )}
       </aside>
