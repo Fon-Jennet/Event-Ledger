@@ -11,6 +11,9 @@ import {
   addDoc,
   updateDoc,
   increment,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import { Event } from "@/lib/types";
 import { toast } from "sonner";
@@ -22,6 +25,7 @@ import {
   ArrowLeft,
   Loader2,
   UploadCloud,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,6 +46,9 @@ export default function EventDetailsPage({
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  
+  // State for chat initialization
+  const [startingChat, setStartingChat] = useState(false);
 
   // States for Trade Fare custom requirements
   const [ageCategory, setAgeCategory] = useState<"child" | "adult" | null>(
@@ -134,6 +141,63 @@ export default function EventDetailsPage({
     }
   };
 
+  // Chat initiation logic
+  const handleMessageOrganizer = async () => {
+    if (!profile) {
+      toast.error("Please sign in to message the organizer.");
+      return;
+    }
+    if (!event) return;
+
+    // FIX 1: Verify the event actually has an organizer ID before querying
+    if (!event.organizerId) {
+      toast.error("This event is missing an organizer ID.");
+      return;
+    }
+
+    if (profile.id === event.organizerId) {
+      toast.error("You cannot message yourself!");
+      return;
+    }
+
+    setStartingChat(true);
+    try {
+      const chatsRef = collection(db, "chats");
+      
+      // Sort IDs alphabetically so the participants array is consistent
+      const sortedParticipants = [profile.id, event.organizerId].sort();
+
+      // Check if conversation already exists
+      const q = query(chatsRef, where("participants", "==", sortedParticipants));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // Chat exists, route to it
+        const existingChatId = querySnapshot.docs[0].id;
+        router.push(`/chat/${existingChatId}`);
+      } else {
+        // Create new chat and include all metadata needed for the Organizer Inbox
+        const newChatRef = await addDoc(chatsRef, {
+          participants: sortedParticipants,
+          eventId: event.id,
+          eventTitle: event.title,
+          organizerId: event.organizerId,
+          attendeeId: profile.id,
+          attendeeName: profile.name,
+          updatedAt: Date.now(),
+          lastMessage: "Chat started"
+        });
+        router.push(`/chat/${newChatRef.id}`);
+      }
+    } catch (error: any) {
+      // FIX 2: Expose the actual error message to the toast
+      console.error("Error starting chat:", error);
+      toast.error(`Failed to open chat: ${error.message}`);
+    } finally {
+      setStartingChat(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout title="Loading Event..." badges={[]}>
@@ -157,10 +221,8 @@ export default function EventDetailsPage({
   const eventDate = new Date(event.date);
   const isSoldOut = event.soldCount >= event.capacity;
 
-  // Ultra-forgiving check: if the title has the word "trade" in it, trigger the logic
   const isTradeFare = event.title?.toLowerCase().includes("trade");
 
-  // Calculate dynamic price based on selection
   let currentPrice = event.price;
   let displayPrice: string | number = event.price;
 
@@ -172,11 +234,10 @@ export default function EventDetailsPage({
       currentPrice = 11;
       displayPrice = 11;
     } else {
-      displayPrice = "10 - 11"; // Show range before selection
+      displayPrice = "10 - 11"; 
     }
   }
 
-  // Determine if the user is allowed to proceed with payment
   const isVerificationComplete =
     !isTradeFare || (isTradeFare && ageCategory && proofDocument);
 
@@ -385,6 +446,23 @@ export default function EventDetailsPage({
                 Get Free Ticket
               </button>
             )}
+
+            {/* MESSAGE ORGANIZER BUTTON */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <button
+                onClick={handleMessageOrganizer}
+                disabled={startingChat}
+                className="w-full h-12 bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                {startingChat ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                ) : (
+                  <MessageSquare className="w-5 h-5 text-purple-600" />
+                )}
+                Message Organiser
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
