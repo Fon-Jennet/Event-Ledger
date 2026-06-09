@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // 1. Import useRouter
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { db, storage } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -17,17 +17,17 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { Sidebar } from "@/components/sidebar"; // 2. Import your Sidebar component (Adjust path if needed)
+import { Sidebar } from "@/components/sidebar";
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
-    photoURL: "",
+    photoUrl: "",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +43,7 @@ export default function ProfilePage() {
         name: profile.name || "",
         phone: profile.phone || "",
         address: profile.address || "",
-        photoURL: profile.photoUrl || "",
+        photoUrl: profile.photoUrl || "",
       });
     }
   }, [profile]);
@@ -76,10 +76,10 @@ export default function ProfilePage() {
       await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
 
-      setFormData((prev) => ({ ...prev, photoURL: downloadURL }));
+      setFormData((prev) => ({ ...prev, photoUrl: downloadURL }));
 
       const userRef = doc(db, "users", profile!.id);
-      await updateDoc(userRef, { photoURL: downloadURL });
+      await updateDoc(userRef, { photoUrl: downloadURL });
 
       setStatus({
         type: "success",
@@ -117,7 +117,6 @@ export default function ProfilePage() {
         message: "Profile saved! Redirecting to dashboard...",
       });
 
-      // 3. Redirect to dashboard after 1.5 seconds so user sees the success state
       setTimeout(() => {
         router.push("/dashboard");
       }, 1500);
@@ -127,7 +126,7 @@ export default function ProfilePage() {
         type: "error",
         message: "Failed to save profile. Please try again.",
       });
-      setIsSaving(false); // Only stop loading if there's an error (prevent flash before redirect)
+      setIsSaving(false);
       setTimeout(() => setStatus({ type: null, message: "" }), 4000);
     }
   };
@@ -140,13 +139,10 @@ export default function ProfilePage() {
     );
   }
 
-  // 4. Wrap the entire page in a flex layout containing the Sidebar
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
-      {/* Sidebar added here */}
       <Sidebar />
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-6 md:p-10">
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div>
@@ -172,9 +168,9 @@ export default function ProfilePage() {
                       </div>
                     ) : null}
 
-                    {formData.photoURL ? (
+                    {formData.photoUrl ? (
                       <img
-                        src={formData.photoURL}
+                        src={formData.photoUrl}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
@@ -289,11 +285,8 @@ export default function ProfilePage() {
                   </h3>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-500 ml-1 flex justify-between">
-                      <span>Email Address</span>
-                      <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">
-                        Locked
-                      </span>
+                    <label className="text-sm font-medium text-slate-500 ml-1 block">
+                      Email Address
                     </label>
                     <div className="relative">
                       <Mail className="w-5 h-5 text-slate-600 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -307,11 +300,8 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-500 ml-1 flex justify-between">
-                      <span>Platform Role</span>
-                      <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">
-                        Locked
-                      </span>
+                    <label className="text-sm font-medium text-slate-500 ml-1 block">
+                      Platform Role
                     </label>
                     <div className="relative">
                       <Shield className="w-5 h-5 text-purple-600/50 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -332,8 +322,7 @@ export default function ProfilePage() {
                   disabled={isSaving || isUploading}
                   className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-2 border border-purple-500/50"
                 >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSaving ? "Saving Ledger..." : "Save Profile Changes"}
+                  {isSaving ? "saving..." : "Save Profile Changes"}
                 </button>
               </div>
             </form>

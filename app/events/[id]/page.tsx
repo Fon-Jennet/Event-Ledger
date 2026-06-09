@@ -11,6 +11,9 @@ import {
   addDoc,
   updateDoc,
   increment,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import { Event } from "@/lib/types";
 import { toast } from "sonner";
@@ -21,11 +24,13 @@ import {
   Ticket,
   ArrowLeft,
   Loader2,
+  UploadCloud,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// 1. IMPORT THE PAYMENT FORM
+// IMPORT THE PAYMENT FORM
 import { PaymentForm } from "@/components/payment-form";
 
 export default function EventDetailsPage({
@@ -41,6 +46,15 @@ export default function EventDetailsPage({
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  
+  // State for chat initialization
+  const [startingChat, setStartingChat] = useState(false);
+
+  // States for Trade Fare custom requirements
+  const [ageCategory, setAgeCategory] = useState<"child" | "adult" | null>(
+    null,
+  );
+  const [proofDocument, setProofDocument] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -59,7 +73,12 @@ export default function EventDetailsPage({
     fetchEvent();
   }, [eventId]);
 
-  // This function is now primarily for FREE events
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProofDocument(e.target.files[0]);
+    }
+  };
+
   const handlePurchase = async () => {
     if (!user) {
       toast.error("Please sign in to purchase tickets");
@@ -80,7 +99,9 @@ export default function EventDetailsPage({
         userId: user.uid,
         purchasedAt: Date.now(),
         status: "valid",
-        price: event.price,
+        price: currentPrice,
+        ...(proofDocument &&
+          ageCategory && { ageCategory, hasProofDocument: true }),
       });
 
       await updateDoc(doc(db, "events", event.id), {
@@ -88,7 +109,6 @@ export default function EventDetailsPage({
         updatedAt: Date.now(),
       });
 
-      // Notification for Organizer
       const notifRef = collection(db, "notifications");
       await addDoc(notifRef, {
         userId: event.organizerId,
@@ -109,18 +129,6 @@ export default function EventDetailsPage({
           read: false,
           createdAt: Date.now(),
         });
-      } else if (
-        newSoldCount === Math.floor(event.capacity * 0.9) ||
-        event.capacity - newSoldCount === 5
-      ) {
-        await addDoc(notifRef, {
-          userId: event.organizerId,
-          title: "Almost Sold Out!",
-          message: `${event.title} is reaching max capacity. Only ${event.capacity - newSoldCount} spots remaining.`,
-          type: "alert",
-          read: false,
-          createdAt: Date.now(),
-        });
       }
 
       toast.success("Ticket acquired successfully!");
@@ -130,6 +138,63 @@ export default function EventDetailsPage({
       toast.error(error.message || "Purchase failed");
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  // Chat initiation logic
+  const handleMessageOrganizer = async () => {
+    if (!profile) {
+      toast.error("Please sign in to message the organizer.");
+      return;
+    }
+    if (!event) return;
+
+    // FIX 1: Verify the event actually has an organizer ID before querying
+    if (!event.organizerId) {
+      toast.error("This event is missing an organizer ID.");
+      return;
+    }
+
+    if (profile.id === event.organizerId) {
+      toast.error("You cannot message yourself!");
+      return;
+    }
+
+    setStartingChat(true);
+    try {
+      const chatsRef = collection(db, "chats");
+      
+      // Sort IDs alphabetically so the participants array is consistent
+      const sortedParticipants = [profile.id, event.organizerId].sort();
+
+      // Check if conversation already exists
+      const q = query(chatsRef, where("participants", "==", sortedParticipants));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // Chat exists, route to it
+        const existingChatId = querySnapshot.docs[0].id;
+        router.push(`/chat/${existingChatId}`);
+      } else {
+        // Create new chat and include all metadata needed for the Organizer Inbox
+        const newChatRef = await addDoc(chatsRef, {
+          participants: sortedParticipants,
+          eventId: event.id,
+          eventTitle: event.title,
+          organizerId: event.organizerId,
+          attendeeId: profile.id,
+          attendeeName: profile.name,
+          updatedAt: Date.now(),
+          lastMessage: "Chat started"
+        });
+        router.push(`/chat/${newChatRef.id}`);
+      }
+    } catch (error: any) {
+      // FIX 2: Expose the actual error message to the toast
+      console.error("Error starting chat:", error);
+      toast.error(`Failed to open chat: ${error.message}`);
+    } finally {
+      setStartingChat(false);
     }
   };
 
@@ -155,6 +220,26 @@ export default function EventDetailsPage({
 
   const eventDate = new Date(event.date);
   const isSoldOut = event.soldCount >= event.capacity;
+
+  const isTradeFare = event.title?.toLowerCase().includes("trade");
+
+  let currentPrice = event.price;
+  let displayPrice: string | number = event.price;
+
+  if (isTradeFare) {
+    if (ageCategory === "child") {
+      currentPrice = 10;
+      displayPrice = 10;
+    } else if (ageCategory === "adult") {
+      currentPrice = 11;
+      displayPrice = 11;
+    } else {
+      displayPrice = "10 - 11"; 
+    }
+  }
+
+  const isVerificationComplete =
+    !isTradeFare || (isTradeFare && ageCategory && proofDocument);
 
   return (
     <DashboardLayout title={event.title} badges={[event.status]}>
@@ -192,7 +277,6 @@ export default function EventDetailsPage({
         </div>
 
         <div className="space-y-6">
-          {/* On phones, avoid sticky causing cramped/overlapping layout */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-sm">
             <div className="flex justify-between items-start mb-6">
               <div className="min-w-0">
@@ -201,9 +285,11 @@ export default function EventDetailsPage({
                     Ticket Price
                   </p>
                   <div className="text-3xl sm:text-4xl font-black text-slate-900 font-mono">
-                    {event.price === 0
-                      ? "Free"
-                      : `FCFA ${event.price.toLocaleString()}`}
+                    {typeof displayPrice === "string"
+                      ? `FCFA ${displayPrice}`
+                      : displayPrice === 0
+                        ? "Free"
+                        : `FCFA ${displayPrice.toLocaleString()}`}
                   </div>
                 </div>
               </div>
@@ -258,14 +344,90 @@ export default function EventDetailsPage({
               </div>
             </div>
 
-            {/* 2. RENDER PAYMENT FORM OR FREE TICKET BUTTON */}
+            {/* AGE SELECTION AND DOCUMENT UPLOAD UI */}
+            {isTradeFare && !isSoldOut && (
+              <div className="mb-6 p-4 bg-purple-50/50 rounded-xl border border-purple-100 space-y-4">
+                <div>
+                  <label className="text-sm font-bold text-slate-800 block mb-2">
+                    Select Age Category
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setAgeCategory("child")}
+                      className={`py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
+                        ageCategory === "child"
+                          ? "bg-purple-600 border-purple-600 text-white shadow-sm"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Child (1-18)
+                    </button>
+                    <button
+                      onClick={() => setAgeCategory("adult")}
+                      className={`py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
+                        ageCategory === "adult"
+                          ? "bg-purple-600 border-purple-600 text-white shadow-sm"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Adult (19+)
+                    </button>
+                  </div>
+                </div>
+
+                {ageCategory && (
+                  <div className="space-y-2 pt-2 border-t border-purple-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-sm font-bold text-slate-800 block">
+                      Verification Document
+                    </label>
+                    <p className="text-xs text-slate-500 mb-2">
+                      Upload a{" "}
+                      {ageCategory === "child"
+                        ? "Birth Certificate"
+                        : "National ID Card"}{" "}
+                      to continue.
+                    </p>
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-purple-200 rounded-lg cursor-pointer bg-white hover:bg-purple-50/50 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <UploadCloud
+                          className={`w-6 h-6 mb-2 ${proofDocument ? "text-purple-600" : "text-slate-400"}`}
+                        />
+                        <p className="text-xs font-medium text-center px-4 truncate w-full">
+                          {proofDocument ? (
+                            <span className="text-purple-700">
+                              {proofDocument.name}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">
+                              Click to upload document
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* PAYMENT LOGIC */}
             {isSoldOut ? (
               <div className="w-full h-12 bg-slate-200 text-slate-500 rounded-xl font-bold flex items-center justify-center gap-2">
                 <Ticket className="w-5 h-5" /> Sold Out
               </div>
-            ) : event.price > 0 ? (
+            ) : !isVerificationComplete ? (
+              <div className="w-full h-12 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-bold flex items-center justify-center text-sm">
+                Complete verification to purchase
+              </div>
+            ) : currentPrice > 0 ? (
               <PaymentForm
-                amount={event.price}
+                amount={currentPrice}
                 eventTitle={event.title}
                 eventId={event.id}
                 organizerId={event.organizerId}
@@ -274,7 +436,7 @@ export default function EventDetailsPage({
               <button
                 onClick={handlePurchase}
                 disabled={purchasing}
-                className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 {purchasing ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -284,6 +446,23 @@ export default function EventDetailsPage({
                 Get Free Ticket
               </button>
             )}
+
+            {/* MESSAGE ORGANIZER BUTTON */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <button
+                onClick={handleMessageOrganizer}
+                disabled={startingChat}
+                className="w-full h-12 bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-slate-700 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                {startingChat ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                ) : (
+                  <MessageSquare className="w-5 h-5 text-purple-600" />
+                )}
+                Message Organiser
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
