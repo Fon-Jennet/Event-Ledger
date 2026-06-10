@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -17,9 +18,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
+import { Sidebar } from "@/components/sidebar";
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
+  const router = useRouter();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -137,6 +140,7 @@ export default function ProfilePage() {
         type: "error",
         message: "Failed to save profile. Please try again.",
       });
+      setIsSaving(false);
       setIsSaving(false);
       setTimeout(() => setStatus({ type: null, message: "" }), 4000);
     }
@@ -296,11 +300,8 @@ export default function ProfilePage() {
                   </h3>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-500 ml-1 flex justify-between">
-                      <span>Email Address</span>
-                      <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">
-                        Locked
-                      </span>
+                    <label className="text-sm font-medium text-slate-500 ml-1 block">
+                      Email Address
                     </label>
                     <div className="relative">
                       <Mail className="w-5 h-5 text-slate-600 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -314,11 +315,8 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-500 ml-1 flex justify-between">
-                      <span>Platform Role</span>
-                      <span className="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">
-                        Locked
-                      </span>
+                    <label className="text-sm font-medium text-slate-500 ml-1 block">
+                      Platform Role
                     </label>
                     <div className="relative">
                       <Shield className="w-5 h-5 text-purple-600/50 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -339,8 +337,7 @@ export default function ProfilePage() {
                   disabled={isSaving || isUploading}
                   className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 flex items-center gap-2 border border-purple-500/50"
                 >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSaving ? "Saving Ledger..." : "Save Profile Changes"}
+                  {isSaving ? "saving..." : "Save Profile Changes"}
                 </button>
               </div>
             </form>

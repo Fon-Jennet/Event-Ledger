@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation"; // 1. Import useRouter
 import {
   LayoutDashboard,
   Calendar,
-  MessageSquare,
   Users,
   LineChart,
   Ticket,
@@ -14,6 +13,7 @@ import {
   X,
   LogOut,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -51,7 +51,8 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg border border-slate-800 shadow-lg"
+        aria-label="Toggle menu"
+        className="fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg border border-slate-800 shadow-lg md:hidden"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -65,12 +66,14 @@ export function Sidebar() {
 
       <aside
         className={`
-        fixed md:static inset-y-0 left-0 z-50
+        fixed md:sticky inset-y-0 md:top-0 left-0 z-50
         w-64 bg-slate-900 border-r border-slate-800 text-white flex flex-col h-full shrink-0
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}
       >
+        {/* Accessibility: close sidebar when focus leaves on small screens */}
+        <span className="sr-only">Sidebar</span>
         <div className="p-6 flex items-center gap-3 mt-10 md:mt-0">
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
             <span className="text-white font-black italic">E</span>
@@ -110,14 +113,6 @@ export function Sidebar() {
               </Link>
             )}
 
-          <Link
-            href="/chat"
-            onClick={closeSidebar}
-            className={getLinkClasses("/chat")}
-          >
-            <MessageSquare className="w-5 h-5" /> Chat Center
-          </Link>
-
           {profile &&
             (profile.role === "admin" || profile.role === "organizer") && (
               <Link
@@ -136,6 +131,16 @@ export function Sidebar() {
               className={getLinkClasses("/users")}
             >
               <Users className="w-5 h-5" /> User Management
+            </Link>
+          )}
+
+          {(profile?.role === "admin" || profile?.role === "organizer") && (
+            <Link
+              href="/chat"
+              onClick={closeSidebar}
+              className={getLinkClasses("/chat")}
+            >
+              <MessageSquare className="w-5 h-5" /> Chats
             </Link>
           )}
         </nav>
@@ -183,7 +188,18 @@ export function Sidebar() {
               />
             </Link>
 
-            {/* 5. Attach the handleSignOut function here */}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex items-center justify-between w-full p-3 rounded-xl transition-all duration-200 hover:bg-slate-800 border border-transparent hover:border-red-700"
+            >
+              <span className="flex items-center gap-3">
+                <LogOut className="w-5 h-5 text-slate-300" />
+                <span className="text-sm font-semibold text-slate-200 group-hover:text-red-500 transition-colors">
+                  Sign out
+                </span>
+              </span>
+            </button>
           </div>
         )}
       </aside>

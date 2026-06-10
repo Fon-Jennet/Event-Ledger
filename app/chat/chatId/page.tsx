@@ -26,18 +26,22 @@ interface ChatMessage {
   createdAt: number;
 }
 
-export default function ChatPage() {
+// Accept the dynamic route parameter (chatId)
+export default function ChatPage({ params }: { params: { chatId: string } }) {
   const { profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Extract chatId from params
+  const { chatId } = params;
+
   useEffect(() => {
     if (!profile) return;
 
     const q = query(
-      collection(db, "global_chat"),
+      collection(db, "chats", chatId, "messages"),
       orderBy("createdAt", "desc"),
       limit(50),
     );
@@ -63,7 +67,7 @@ export default function ChatPage() {
     );
 
     return () => unsubscribe();
-  }, [profile]);
+  }, [profile, chatId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,19 +75,28 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !profile) return;
+    if (!newMessage.trim() || !profile || !chatId) return;
 
     const messageText = newMessage.trim();
     setNewMessage("");
 
     try {
-      await addDoc(collection(db, "global_chat"), {
+      // 2. Add the message to the sub-collection
+      await addDoc(collection(db, "chats", chatId, "messages"), {
         text: messageText,
         senderId: profile.id,
         senderName: profile.name,
         senderRole: profile.role,
         createdAt: Date.now(),
       });
+
+      // 3. Update the parent chat document for the organizer's inbox
+      const chatRef = doc(db, "chats", chatId);
+      await updateDoc(chatRef, {
+        lastMessage: messageText,
+        updatedAt: Date.now(),
+      });
+
       scrollToBottom();
     } catch (error) {
       toast.error("Failed to send message.");
@@ -104,7 +117,7 @@ export default function ChatPage() {
   }
 
   return (
-    <DashboardLayout title="Global Chat Center" badges={["Live Support"]}>
+    <DashboardLayout title="Message Organizer" badges={["Private Chat"]}>
       <div className="max-w-4xl mx-auto h-[600px] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="flex-1 p-6 overflow-y-auto bg-slate-50 space-y-4">
           {loading ? (

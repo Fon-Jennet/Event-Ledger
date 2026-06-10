@@ -7,16 +7,6 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Event, Ticket } from "@/lib/types";
 import { Loader2, TrendingUp, Users, DollarSign, Calendar } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import Link from "next/link";
 
 export default function AnalyticsPage() {
   const { profile } = useAuth();
@@ -94,9 +84,6 @@ export default function AnalyticsPage() {
         <div className="p-8 text-center text-slate-500">
           Unauthorised access. Only organizers and admins can view analytics.
         </div>
-        <Link href="/" className="text-purple-600 hover:underline font-bold">
-          Go back home
-        </Link>
       </DashboardLayout>
     );
   }
@@ -168,107 +155,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-6">
-                Top Events by Revenue (FCFA)
-              </h3>
-              {chartData.length > 0 ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="#E2E8F0"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748B", fontSize: 12 }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748B", fontSize: 12 }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "#F1F5F9" }}
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "none",
-                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                        }}
-                      />
-                      <Bar
-                        dataKey="sales"
-                        fill="#9333ea"
-                        radius={[4, 4, 0, 0]}
-                        barSize={40}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-72 flex items-center justify-center text-slate-400">
-                  Not enough data to display chart
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-6">
-                Top Events by Tickets Sold
-              </h3>
-              {chartData.length > 0 ? (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="#E2E8F0"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748B", fontSize: 12 }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748B", fontSize: 12 }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "#F1F5F9" }}
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "none",
-                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                        }}
-                      />
-                      <Bar
-                        dataKey="tickets"
-                        fill="#2563eb"
-                        radius={[4, 4, 0, 0]}
-                        barSize={40}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-72 flex items-center justify-center text-slate-400">
-                  Not enough data to display chart
-                </div>
-              )}
-            </div>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2"></div>
           </div>
         </div>
       )}

@@ -78,20 +78,25 @@ export default function CreateEventPage() {
 
       // 2. Save event data to Firestore including the new fields
       const eventRef = collection(db, "events");
+      const eventDate = new Date(formData.date).getTime();
+      const now = Date.now();
+      // Intentionally do not set a status field on newly created events.
+      // This prevents UI tags like "upcoming" from appearing immediately after creation.
+
       await addDoc(eventRef, {
         title: formData.title,
         eventType: formData.eventType,
         imageUrl: imageUrl, // Will be empty string if no image was uploaded
         description: formData.description,
-        date: new Date(formData.date).getTime(),
+        date: eventDate,
         location: formData.location,
         price: Number(formData.price),
         capacity: Number(formData.capacity),
         soldCount: 0,
         organizerId: profile.id,
-        status: "upcoming",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now,
+
+        updatedAt: now,
       });
 
       toast.success("Event created successfully");
