@@ -24,9 +24,12 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string,
-    
     role?: string,
-  ) => Promise<void>;
+    ageRange?: string,
+    profileImage?: string | null,
+    phone?: string,
+    address?: string,
+  ) => Promise<User>;
   logOut: () => Promise<void>;
 }
 
@@ -36,7 +39,9 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => {},
   signInWithEmail: async () => {},
-  signUpWithEmail: async () => {},
+  signUpWithEmail: async () => {
+    throw new Error("AuthContext not initialized");
+  },
   logOut: async () => {},
 });
 
@@ -54,8 +59,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         const profileRef = doc(db, "users", currentUser.uid);
 
-        // 🟢 REAL-TIME LISTENER: Replaces getDoc()
-        // Automatically updates the 'profile' state whenever the Firestore document changes
         unsubscribeSnapshot = onSnapshot(profileRef, async (profileSnap) => {
           if (profileSnap.exists()) {
             setProfile({
@@ -64,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } as UserProfile);
             setLoading(false);
           } else {
-            // Profile doesn't exist yet, initialize it (preserves your localStorage logic)
             let role = "attendee";
             if (typeof window !== "undefined") {
               const storedRole = localStorage.getItem("signupRole");
@@ -76,17 +78,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const newProfile: Omit<UserProfile, "id"> = {
               email: currentUser.email || "",
-              name: currentUser.displayName || "Unknown Attendee",
+              name: currentUser.displayName || "Unknown User",
               role: role as any,
               createdAt: Date.now(),
-              // Note: If your UserProfile type has optional fields like photoURL or phone,
-              // you can initialize them as empty strings here if desired.
+              profileImage: "",
+              phone: "",
+              address: "",
             };
 
             await setDoc(profileRef, newProfile);
-            // We don't necessarily need to call setProfile manually here because
-            // setDoc will trigger the onSnapshot listener again immediately,
-            // but setting it ensures no UI flash.
             setProfile({ id: currentUser.uid, ...newProfile } as UserProfile);
             setLoading(false);
           }
@@ -94,12 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setLoading(false);
-        // Clean up snapshot listener if user logs out
         if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
 
-    // Clean up all listeners on component unmount
     return () => {
       unsubscribeAuth();
       if (unsubscribeSnapshot) unsubscribeSnapshot();
@@ -123,19 +121,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     name: string,
     role: string = "attendee",
-  ) => {
+    ageRange?: string,
+    profileImage?: string | null,
+    phone: string = "",
+    address: string = "",
+  ): Promise<User> => {
     if (typeof window !== "undefined") {
       localStorage.setItem("signupRole", role);
     }
+
     const res = await createUserWithEmailAndPassword(auth, email, password);
     const profileRef = doc(db, "users", res.user.uid);
+
     const newProfile: Omit<UserProfile, "id"> = {
       email: res.user.email || email,
-      name: name || "Unknown Attendee",
+      name: name || "Unknown User",
       role: role as any,
       createdAt: Date.now(),
+      profileImage: profileImage || "",
+      phone,
+      address,
+      ...(role === "attendee" && ageRange ? { ageRange } : {}),
     };
+
     await setDoc(profileRef, newProfile);
+    return res.user;
   };
 
   const logOut = async () => {

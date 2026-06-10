@@ -96,6 +96,9 @@ export default function EventsPage() {
         <div className="p-8 text-center text-slate-500">
           Unauthorised access.
         </div>
+        <Link href="/" className="text-purple-600 hover:underline font-bold">
+          Go back home
+        </Link>
       </DashboardLayout>
     );
   }
