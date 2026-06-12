@@ -37,7 +37,7 @@ export function AdminDashboard() {
 
   return (
     <DashboardLayout title="Admin Overview" badges={[]}>
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6 h-full">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
             Total Users

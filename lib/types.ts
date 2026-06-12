@@ -25,6 +25,7 @@ export interface Event {
   updatedAt: number;
   imageUrl?: string;
   eventType: "concert" | "conference" | "workshop" | "festival" | "other";
+  ageDiference?: boolean;
 }
 
 export interface Ticket {

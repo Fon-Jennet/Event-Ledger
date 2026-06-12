@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { db, storage } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import {
@@ -35,6 +35,7 @@ export default function EditEventPage({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string>("");
+  const [imageStringUrl, setImageStringUrl] = useState<string>("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -103,18 +104,71 @@ export default function EditEventPage({
     }
   }, [eventId, profile, router]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     const file = e.target.files[0];
+
+  //     // Basic validation
+  //     if (file.size > 5 * 1024 * 1024) {
+  //       toast.error("Image must be less than 5MB");
+  //       return;
+  //     }
+
+  //     setImageFile(file);
+  //     setImagePreview(URL.createObjectURL(file));
+  //   }
+  // };
+
+  // Helper function to convert a File to a Base64 string
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      // Basic validation
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB");
+      // STRICT VALIDATION: Must be very small to fit in Firestore's 1MB limit.
+      // Setting max size to 500KB (Base64 adds ~33% overhead).
+      if (file.size > 500 * 1024) {
+        toast.error("Image must be less than 500KB to save in the database.");
         return;
       }
 
+      // Set immediate local preview
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+
+      try {
+        toast.info("Saving image...");
+
+        // 1. Convert the file object to a Base64 string
+        const base64String = await convertToBase64(file);
+
+        // 2. Save the string directly to Firestore
+        // Replace 'users' and 'your_user_id' with your actual collection path
+        const userDocRef = doc(db, "users", "your_user_id");
+
+        // Using { merge: true } ensures you don't overwrite other user data
+        await setDoc(
+          userDocRef,
+          { profileImage: base64String },
+          { merge: true },
+        );
+
+        // 3. Update your state
+        setImageStringUrl(base64String);
+
+        toast.success("Image saved successfully!");
+      } catch (error) {
+        console.error("Error saving image:", error);
+        toast.error("Failed to save image to database.");
+      }
     }
   };
 

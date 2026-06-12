@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { useEffect, useState, useRef } from "react";
+// 1. Import 'use' from react
+import { useEffect, useState, useRef, use } from "react";
 import {
   collection,
   query,
@@ -26,16 +27,21 @@ interface ChatMessage {
   createdAt: number;
 }
 
-// Accept the dynamic route parameter (chatId)
-export default function ChatPage({ params }: { params: { chatId: string } }) {
+// 2. Change params type to a Promise
+export default function ChatPage({
+  params,
+}: {
+  params: Promise<{ chatId: string }>;
+}) {
   const { profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Extract chatId from params
-  const { chatId } = params;
+  // 3. Unwrap the params using React.use()
+  const unwrappedParams = use(params);
+  const chatId = unwrappedParams.chatId;
 
   useEffect(() => {
     if (!profile || !chatId) return;
@@ -100,6 +106,8 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message.");
+      // Optional: restore the message text if the upload fails
+      setNewMessage(messageText);
     }
   };
 

@@ -137,7 +137,7 @@ export default function EventsPage() {
     return (
       <div
         key={event.id}
-        className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group"
+        className="bg-white w-100 h-full rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group"
       >
         {/* Event Image Header */}
         <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
@@ -227,7 +227,13 @@ export default function EventsPage() {
         </div>
 
         {/* Card Actions Footer */}
-        <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 bg-slate-50">
+        <div className="grid grid-cols-4 divide-x divide-slate-100 border-t border-slate-100 bg-slate-50">
+          <Link
+            href={`/events/${event.id}/tickets`}
+            className="flex items-center justify-center gap-1 py-3 text-[10px] font-bold text-blue-600 hover:bg-blue-50"
+          >
+            <Users className="w-3.5 h-3.5" /> TICKETS
+          </Link>
           <Link
             href={`/events/${event.id}/scan`}
             className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-purple-600 hover:bg-purple-100 transition-colors"

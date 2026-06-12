@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -18,11 +17,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
-import { Sidebar } from "@/components/sidebar";
 
 export default function ProfilePage() {
   const { profile, user } = useAuth();
-  const router = useRouter();
   const router = useRouter();
 
   const [formData, setFormData] = useState({

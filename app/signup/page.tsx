@@ -170,12 +170,12 @@ function SignupForm() {
             </div>
 
             {/* Image Upload Area */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Profile Picture
               </label>
-              <div className="mt-1 flex items-center gap-4">
-                <div className="flex-shrink-0 h-14 w-14 rounded-lg border border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden">
+              <div className="mt-1 flex items-center gap-4 flex-wraps">
+                <div className="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden relative shadow-xl">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -196,7 +196,7 @@ function SignupForm() {
                   />
                 </label>
               </div>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium text-slate-700">
@@ -226,10 +226,7 @@ function SignupForm() {
                     Select your age group
                   </option>
                   <option value="under-18">Under 18</option>
-                  <option value="18-24">18 - 24</option>
-                  <option value="25-34">25 - 34</option>
-                  <option value="35-44">35 - 44</option>
-                  <option value="45-plus">45 +</option>
+                  <option value="18+">Adult</option>
                 </select>
               </div>
             )}
@@ -242,7 +239,7 @@ function SignupForm() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 (555) 000-0000"
+                placeholder="612345678"
                 className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
               />
             </div>
