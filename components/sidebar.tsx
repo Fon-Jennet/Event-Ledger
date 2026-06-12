@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // 1. Import useRouter
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
@@ -18,10 +18,9 @@ import {
 import { useAuth } from "@/lib/auth-context";
 
 export function Sidebar() {
-  // 2. Destructure logOut (capital O) to match your AuthContext
   const { profile, logOut } = useAuth();
   const pathname = usePathname();
-  const router = useRouter(); // 3. Initialize router
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const getLinkClasses = (path: string) => {
@@ -36,12 +35,11 @@ export function Sidebar() {
   const closeSidebar = () => setIsOpen(false);
   const isProfileActive = pathname === "/profile";
 
-  // 4. Create a dedicated async handler for logging out
   const handleSignOut = async () => {
     try {
       closeSidebar();
-      await logOut(); // Clears the Firebase session
-      router.push("/login"); // Redirects user to the login screen (change to "/" if your login is on the home page)
+      await logOut();
+      router.push("/login");
     } catch (error) {
       console.error("Failed to log out:", error);
     }
@@ -49,6 +47,7 @@ export function Sidebar() {
 
   return (
     <>
+      {/* Mobile Menu Toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle menu"
@@ -57,6 +56,7 @@ export function Sidebar() {
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
@@ -67,28 +67,30 @@ export function Sidebar() {
       <aside
         className={`
         fixed md:sticky inset-y-0 md:top-0 left-0 z-50
-        w-64 bg-slate-900 border-r border-slate-800 text-white flex flex-col h-full shrink-0
+        w-64 bg-slate-900 border-r border-slate-800 text-white flex flex-col h-screen shrink-0 bottom-0
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}
       >
-        {/* Accessibility: close sidebar when focus leaves on small screens */}
         <span className="sr-only">Sidebar</span>
-        <div className="p-6 flex items-center gap-3 mt-10 md:mt-0">
+
+        {/* Logo Section */}
+        <div className="p-6 flex items-center gap-3 mt-10 md:mt-0 shrink-0">
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
             <span className="text-white font-black italic">E</span>
           </div>
           <span className="font-bold text-xl tracking-tight">Event Ledger</span>
         </div>
 
+        {/* Navigation Links */}
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-          {/* ... (Your existing navigation links remain exactly the same) ... */}
+          {/* Unified Feed Route */}
           <Link
             href="/dashboard"
             onClick={closeSidebar}
             className={getLinkClasses("/dashboard")}
           >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
+            <LayoutDashboard className="w-5 h-5" /> Discover
           </Link>
 
           {profile?.role === "attendee" && (
@@ -101,6 +103,7 @@ export function Sidebar() {
             </Link>
           )}
 
+          {/* Organizer/Admin Event Management */}
           {profile &&
             (profile.role === "admin" || profile.role === "organizer") && (
               <Link
@@ -145,8 +148,9 @@ export function Sidebar() {
           )}
         </nav>
 
+        {/* Profile Footer */}
         {profile && (
-          <div className="p-4 mt-auto border-t border-slate-800 space-y-2 bg-slate-900/50">
+          <div className="p-4 shrink-0 border-t border-slate-800 space-y-2 bg-slate-900/50">
             <Link
               href="/profile"
               onClick={closeSidebar}
@@ -158,23 +162,30 @@ export function Sidebar() {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 ${isProfileActive ? "border-purple-400" : "border-slate-600"}`}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 ${
+                    isProfileActive ? "border-purple-400" : "border-slate-600"
+                  }`}
                 >
-                  {profile.photoUrl ? (
+                  {/* IMAGE MAPPING FIX: Using profile.profileImage */}
+                  {profile.profileImage ? (
                     <img
-                      src={profile.photoUrl}
+                      src={profile.profileImage}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-xs font-bold text-white uppercase bg-slate-700 w-full h-full flex items-center justify-center">
-                      {profile.name.substring(0, 2)}
+                      {profile.name ? profile.name.substring(0, 2) : "US"}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-col">
                   <span
-                    className={`text-sm font-semibold truncate max-w-[100px] transition-colors ${isProfileActive ? "text-purple-400" : "group-hover:text-purple-300"}`}
+                    className={`text-sm font-semibold truncate max-w-[100px] transition-colors ${
+                      isProfileActive
+                        ? "text-purple-400"
+                        : "group-hover:text-purple-300"
+                    }`}
                   >
                     {profile.name}
                   </span>
@@ -184,17 +195,21 @@ export function Sidebar() {
                 </div>
               </div>
               <ChevronRight
-                className={`w-4 h-4 transition-transform ${isProfileActive ? "text-purple-400 translate-x-1" : "text-slate-500 group-hover:text-purple-400 group-hover:translate-x-1"}`}
+                className={`w-4 h-4 transition-transform ${
+                  isProfileActive
+                    ? "text-purple-400 translate-x-1"
+                    : "text-slate-500 group-hover:text-purple-400 group-hover:translate-x-1"
+                }`}
               />
             </Link>
 
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex items-center justify-between w-full p-3 rounded-xl transition-all duration-200 hover:bg-slate-800 border border-transparent hover:border-red-700"
+              className="flex items-center justify-between w-full hover:text-red-500 p-3 rounded-xl transition-all duration-200 hover:bg-slate-800 border border-transparent hover:border-red-700"
             >
               <span className="flex items-center gap-3">
-                <LogOut className="w-5 h-5 text-slate-300" />
+                <LogOut className="w-5 h-5 text-slate-300 " />
                 <span className="text-sm font-semibold text-slate-200 group-hover:text-red-500 transition-colors">
                   Sign out
                 </span>

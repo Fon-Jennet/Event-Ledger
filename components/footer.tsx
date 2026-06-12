@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-400 py-12 text-sm shrink-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-4 gap-8">
+    <footer className="bg-slate-900 text-slate-400 py-2 text-sm shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-4 gap-8 pt-3">
         <div className="col-span-2">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-6 h-6 rounded border border-slate-700 flex items-center justify-center text-white font-black text-xs italic">
@@ -18,7 +18,7 @@ export function Footer() {
             around the world. Based in Cameroon.
           </p>
         </div>
-        <div>
+        {/* <div>
           <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">
             Product
           </h4>
@@ -48,7 +48,7 @@ export function Footer() {
               </Link>
             </li>
           </ul>
-        </div>
+        </div> */}
         <div>
           <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">
             Legal
@@ -81,7 +81,7 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-800 flex justify-center items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-4 border-t border-slate-800 flex justify-center items-center">
         <p>© 2026 EventLedger . All rights reserved.</p>
       </div>
     </footer>

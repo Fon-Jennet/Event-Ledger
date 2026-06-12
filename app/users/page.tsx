@@ -15,6 +15,7 @@ import { db } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 import { Users, Mail, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function UsersPage() {
   const { profile } = useAuth();
@@ -68,6 +69,9 @@ export default function UsersPage() {
         <div className="p-8 text-center text-slate-500">
           Unauthorised access. Admins only.
         </div>
+        <Link href="/" className="text-purple-600 hover:underline font-bold">
+          Go back home
+        </Link>
       </DashboardLayout>
     );
   }

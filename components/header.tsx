@@ -83,7 +83,7 @@ export function Header({
         <h2 className="text-lg sm:text-xl font-bold text-slate-800 truncate">
           {title}
         </h2>
-        <div className="flex items-center gap-2 flex-wrap max-w-full">
+        {/* <div className="flex items-center gap-2 flex-wrap max-w-full">
           {badges.map((b, i) => (
             <div
               key={i}
@@ -92,7 +92,7 @@ export function Header({
               {b}
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
       <div className="flex items-center gap-6">
         <div className="relative" ref={dropdownRef}>

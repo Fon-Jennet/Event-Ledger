@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   User,
   Mail,
@@ -27,7 +26,7 @@ export default function ProfilePage() {
     name: "",
     phone: "",
     address: "",
-    photoUrl: "",
+    profileImage: "", // Switched to string data url
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +42,7 @@ export default function ProfilePage() {
         name: profile.name || "",
         phone: profile.phone || "",
         address: profile.address || "",
-        photoUrl: profile.photoUrl || "",
+        profileImage: profile.profileImage || "",
       });
     }
   }, [profile]);
@@ -52,9 +51,10 @@ export default function ProfilePage() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  // Convert uploaded image directly into Base64 (No Firebase Storage cost)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !profile) return;
 
     if (!file.type.startsWith("image/")) {
       setStatus({
@@ -63,8 +63,11 @@ export default function ProfilePage() {
       });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus({ type: "error", message: "Image must be less than 5MB." });
+    if (file.size > 800 * 1024) {
+      setStatus({
+        type: "error",
+        message: "Image must be less than 800KB to sync cleanly.",
+      });
       return;
     }
 
@@ -72,28 +75,36 @@ export default function ProfilePage() {
     setStatus({ type: null, message: "" });
 
     try {
-      const storageRef = ref(storage, `avatars/${profile!.id}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
 
-      setFormData((prev) => ({ ...prev, photoUrl: downloadURL }));
+        // Update state presentation layer
+        setFormData((prev) => ({ ...prev, profileImage: base64String }));
 
-      const userRef = doc(db, "users", profile!.id);
-      await updateDoc(userRef, { photoUrl: downloadURL });
+        // Commit immediately to Firestore user document collection
+        const userRef = doc(db, "users", profile.id);
+        await updateDoc(userRef, { profileImage: base64String });
 
-      setStatus({
-        type: "success",
-        message: "Profile photo updated successfully!",
-      });
+        setStatus({
+          type: "success",
+          message: "Profile photo updated successfully!",
+        });
+        setIsUploading(false);
+      };
+
+      reader.onerror = () => {
+        throw new Error("File reading failed");
+      };
+
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error("Upload error:", error);
       setStatus({
         type: "error",
         message: "Failed to upload image. Try again.",
       });
-    } finally {
       setIsUploading(false);
-      setTimeout(() => setStatus({ type: null, message: "" }), 4000);
     }
   };
 
@@ -119,13 +130,14 @@ export default function ProfilePage() {
 
       setTimeout(() => {
         router.push("/dashboard");
-      }, 1500);
+      }, 1000);
     } catch (error) {
       console.error("Save error:", error);
       setStatus({
         type: "error",
         message: "Failed to save profile. Please try again.",
       });
+      setIsSaving(false);
       setIsSaving(false);
       setTimeout(() => setStatus({ type: null, message: "" }), 4000);
     }
@@ -162,15 +174,15 @@ export default function ProfilePage() {
               <div className="relative flex justify-between items-end -mt-16 mb-8">
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden relative shadow-xl">
-                    {isUploading ? (
+                    {isUploading && (
                       <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center z-10">
                         <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                       </div>
-                    ) : null}
+                    )}
 
-                    {formData.photoUrl ? (
+                    {formData.profileImage ? (
                       <img
-                        src={formData.photoUrl}
+                        src={formData.profileImage}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
@@ -239,7 +251,7 @@ export default function ProfilePage() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
+                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                       />
                     </div>
                   </div>
@@ -256,7 +268,7 @@ export default function ProfilePage() {
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder="+1 (555) 000-0000"
-                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
+                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                       />
                     </div>
                   </div>
@@ -273,7 +285,7 @@ export default function ProfilePage() {
                         value={formData.address}
                         onChange={handleChange}
                         placeholder="Enter your full address"
-                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
+                        className="w-full bg-slate-950/50 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                       />
                     </div>
                   </div>
@@ -308,7 +320,7 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         disabled
-                        value={profile.role.toUpperCase()}
+                        value={profile.role?.toUpperCase() || ""}
                         className="w-full bg-slate-900 border border-slate-800/50 rounded-xl pl-12 pr-4 py-3.5 text-sm text-purple-400/70 font-bold cursor-not-allowed"
                       />
                     </div>
@@ -320,7 +332,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={isSaving || isUploading}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 disabled:shadow-none flex items-center gap-2 border border-purple-500/50"
+                  className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-purple-600/20 disabled:opacity-50 flex items-center gap-2 border border-purple-500/50"
                 >
                   {isSaving ? "saving..." : "Save Profile Changes"}
                 </button>

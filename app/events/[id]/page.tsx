@@ -46,7 +46,7 @@ export default function EventDetailsPage({
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  
+
   // State for chat initialization
   const [startingChat, setStartingChat] = useState(false);
 
@@ -163,12 +163,15 @@ export default function EventDetailsPage({
     setStartingChat(true);
     try {
       const chatsRef = collection(db, "chats");
-      
+
       // Sort IDs alphabetically so the participants array is consistent
       const sortedParticipants = [profile.id, event.organizerId].sort();
 
       // Check if conversation already exists
-      const q = query(chatsRef, where("participants", "==", sortedParticipants));
+      const q = query(
+        chatsRef,
+        where("participants", "==", sortedParticipants),
+      );
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -185,7 +188,7 @@ export default function EventDetailsPage({
           attendeeId: profile.id,
           attendeeName: profile.name,
           updatedAt: Date.now(),
-          lastMessage: "Chat started"
+          lastMessage: "Chat started",
         });
         router.push(`/chat/${newChatRef.id}`);
       }
@@ -234,7 +237,7 @@ export default function EventDetailsPage({
       currentPrice = 11;
       displayPrice = 11;
     } else {
-      displayPrice = "10 - 11"; 
+      displayPrice = "10 - 11";
     }
   }
 
@@ -462,7 +465,6 @@ export default function EventDetailsPage({
                 Message Organiser
               </button>
             </div>
-
           </div>
         </div>
       </div>

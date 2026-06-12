@@ -17,6 +17,7 @@ import {
   Image as ImageIcon,
   ChevronDown,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function CreateEventPage() {
   const { profile } = useAuth();
@@ -113,6 +114,9 @@ export default function CreateEventPage() {
         <div className="p-8 text-center text-slate-500">
           Only organizers can create events.
         </div>
+        <Link href="/" className="text-purple-600 hover:underline font-bold">
+          Go back home
+        </Link>
       </DashboardLayout>
     );
   }
