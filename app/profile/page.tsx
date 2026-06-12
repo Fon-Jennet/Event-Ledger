@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   User,
   Mail,
@@ -54,7 +53,7 @@ export default function ProfilePage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !profile) return;
 
     if (!file.type.startsWith("image/")) {
       setStatus({
@@ -72,14 +71,26 @@ export default function ProfilePage() {
     setStatus({ type: null, message: "" });
 
     try {
-      const storageRef = ref(storage, `avatars/${profile!.id}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const form = new FormData();
+      form.append("file", file);
+      form.append("folder", `avatars/${profile.id}`);
 
-      setFormData((prev) => ({ ...prev, photoUrl: downloadURL }));
+      const res = await fetch("/api/cloudinary/upload", {
+        method: "POST",
+        body: form,
+      });
 
-      const userRef = doc(db, "users", profile!.id);
-      await updateDoc(userRef, { photoUrl: downloadURL });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Upload failed");
+      }
+
+      const secureUrl = data.secureUrl as string;
+
+      setFormData((prev) => ({ ...prev, photoUrl: secureUrl }));
+
+      const userRef = doc(db, "users", profile.id);
+      await updateDoc(userRef, { photoUrl: secureUrl });
 
       setStatus({
         type: "success",

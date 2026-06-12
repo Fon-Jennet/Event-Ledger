@@ -46,7 +46,7 @@ export default function EventDetailsPage({
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  
+
   // State for chat initialization
   const [startingChat, setStartingChat] = useState(false);
 
@@ -55,6 +55,25 @@ export default function EventDetailsPage({
     null,
   );
   const [proofDocument, setProofDocument] = useState<File | null>(null);
+
+  const uploadProofToCloudinary = async () => {
+    if (!proofDocument) return null;
+    const form = new FormData();
+    form.append("file", proofDocument);
+    form.append("folder", `ticket-proofs/${eventId}/${user?.uid || "unknown"}`);
+
+    const res = await fetch("/api/cloudinary/upload", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || "Proof upload failed");
+    }
+
+    return data?.secureUrl as string;
+  };
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -94,14 +113,21 @@ export default function EventDetailsPage({
     setPurchasing(true);
     try {
       const ticketRef = collection(db, "tickets");
+
+      let proofDocumentUrl: string | undefined;
+      if (proofDocument && ageCategory) {
+        proofDocumentUrl = (await uploadProofToCloudinary()) || undefined;
+      }
+
       await addDoc(ticketRef, {
         eventId: event.id,
         userId: user.uid,
         purchasedAt: Date.now(),
         status: "valid",
         price: currentPrice,
-        ...(proofDocument &&
-          ageCategory && { ageCategory, hasProofDocument: true }),
+        ...(proofDocument && ageCategory
+          ? { ageCategory, hasProofDocument: true, proofDocumentUrl }
+          : {}),
       });
 
       await updateDoc(doc(db, "events", event.id), {
@@ -163,12 +189,15 @@ export default function EventDetailsPage({
     setStartingChat(true);
     try {
       const chatsRef = collection(db, "chats");
-      
+
       // Sort IDs alphabetically so the participants array is consistent
       const sortedParticipants = [profile.id, event.organizerId].sort();
 
       // Check if conversation already exists
-      const q = query(chatsRef, where("participants", "==", sortedParticipants));
+      const q = query(
+        chatsRef,
+        where("participants", "==", sortedParticipants),
+      );
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -185,7 +214,7 @@ export default function EventDetailsPage({
           attendeeId: profile.id,
           attendeeName: profile.name,
           updatedAt: Date.now(),
-          lastMessage: "Chat started"
+          lastMessage: "Chat started",
         });
         router.push(`/chat/${newChatRef.id}`);
       }
@@ -234,7 +263,7 @@ export default function EventDetailsPage({
       currentPrice = 11;
       displayPrice = 11;
     } else {
-      displayPrice = "10 - 11"; 
+      displayPrice = "10 - 11";
     }
   }
 
@@ -462,7 +491,6 @@ export default function EventDetailsPage({
                 Message Organiser
               </button>
             </div>
-
           </div>
         </div>
       </div>

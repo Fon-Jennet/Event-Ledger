@@ -14,8 +14,7 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-xs leading-relaxed">
-            Making event management simple, scalable, and secure for everyone
-            around the world. Based in Cameroon.
+            Making event management simple, scalable, and secure for everyone in Buea.
           </p>
         </div>
         <div>
