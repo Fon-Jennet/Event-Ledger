@@ -51,27 +51,30 @@ export default function LandingPage() {
                 EventLedger
               </span>
             </div>
+
             <div className="hidden md:flex space-x-8">
               <a
-                href="#features"
+                href="#"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
-                Features
+                Home
               </a>
 
               <a
-                href="#audience"
+                href="#about"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
-                Who is this for?
+                About
               </a>
+
               <a
-                href="#pricing"
+                href="#faqs"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
-                Pricing
+                FAQs
               </a>
             </div>
+
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
@@ -92,28 +95,32 @@ export default function LandingPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-            <Zap className="w-3.5 h-3.5 text-purple-500" />
-          </div>
+        <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center w-full h-full"
+            style={{ backgroundImage: "url('/Event.jpg')" }}
+          />
+          <div className="absolute inset-0 w-full h-full bg-slate-900/60" />
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 mb-6">
-            Create, manage, and
-            <br className="hidden md:block" /> scale your events.
-          </h1>
-          <p className="mt-4 text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            EventLedger is the all-in-one platform for organizers to sell
-            tickets, manage attendees, and host unforgettable experiences. Built
-            for speed and reliability.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-            >
-              Get Started
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+          <div className="relative max-w-7xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
+              Create, manage, and
+              <br className="hidden md:block" /> scale your events.
+            </h1>
+            <p className="mt-4 text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
+              EventLedger is the all-in-one platform for organizers to sell
+              tickets, manage attendees, and host unforgettable experiences.
+              Built for speed and reliability.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -173,51 +180,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        {/* Stats & Partners */}
-        <section className="py-16 bg-purple-600 text-white border-y border-purple-500">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-purple-500">
-              <div>
-                <h3 className="text-4xl font-black mb-2 font-mono">15,000+</h3>
-                <p className="text-purple-200 font-medium">Events Created</p>
-              </div>
-              <div>
-                <h3 className="text-4xl font-black mb-2 font-mono">1.2M+</h3>
-                <p className="text-purple-200 font-medium">Tickets Sold</p>
-              </div>
-              <div>
-                <h3 className="text-4xl font-black mb-2 font-mono">45k+</h3>
-                <p className="text-purple-200 font-medium">Organizers</p>
-              </div>
-              <div>
-                <h3 className="text-4xl font-black mb-2 font-mono">100%</h3>
-                <p className="text-purple-200 font-medium">Secure Scans</p>
-              </div>
-            </div>
-
-            <div className="mt-16 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest text-purple-200 mb-6">
-                Trusted by Innovative Partners in Cameroon and Beyond
-              </p>
-              <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-                {/* Partner placeholders */}
-                <span className="text-xl font-bold font-serif italic">
-                  TechHub Cmr
-                </span>
-                <span className="text-xl font-black tracking-tighter">
-                  SILICON MOUNTAIN
-                </span>
-                <span className="text-xl font-bold font-mono">MboaEvents</span>
-                <span className="text-xl font-black tracking-widest">
-                  ACTIVATARS
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* How it Works / About */}
-        <section className="py-24 bg-slate-50">
+        <section id="about" className="py-24 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div>
@@ -352,7 +316,10 @@ export default function LandingPage() {
         </section>
 
         {/* FAQ Area */}
-        <section className="py-24 bg-slate-50 border-t border-slate-200">
+        <section
+          id="faqs"
+          className="py-24 bg-slate-50 border-t border-slate-200"
+        >
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold text-slate-900 mb-4">

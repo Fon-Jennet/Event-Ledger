@@ -4,9 +4,8 @@ import { useAuth } from "@/lib/auth-context";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db, storage } from "@/lib/firebase"; // Make sure storage is exported in firebase.ts
+import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import {
   Calendar as CalendarIcon,
@@ -52,6 +51,30 @@ export default function CreateEventPage() {
     }
   };
 
+  const uploadToCloudinary = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "events");
+
+    // Optional: if you configured presets, you can set one here.
+    // formData.append("uploadPreset", "YOUR_PRESET");
+
+    const res = await fetch("/api/cloudinary/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || "Cloudinary upload failed");
+    }
+
+    const data = (await res.json()) as { secureUrl?: string; error?: string };
+    if (!data.secureUrl)
+      throw new Error(data.error || "Cloudinary upload failed");
+    return data.secureUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -66,27 +89,20 @@ export default function CreateEventPage() {
     try {
       let imageUrl = "";
 
-      // 1. Upload image to Firebase Storage if a file was selected
+      // 1) Upload image to Cloudinary if selected
       if (imageFile) {
-        const fileExtension = imageFile.name.split(".").pop();
-        const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-        const storageRef = ref(storage, fileName);
-
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
+        imageUrl = await uploadToCloudinary(imageFile);
       }
 
-      // 2. Save event data to Firestore including the new fields
+      // 2) Save event data to Firestore
       const eventRef = collection(db, "events");
       const eventDate = new Date(formData.date).getTime();
       const now = Date.now();
-      // Intentionally do not set a status field on newly created events.
-      // This prevents UI tags like "upcoming" from appearing immediately after creation.
 
       await addDoc(eventRef, {
         title: formData.title,
         eventType: formData.eventType,
-        imageUrl: imageUrl, // Will be empty string if no image was uploaded
+        imageUrl, // Cloudinary secure_url (empty string if no image)
         description: formData.description,
         date: eventDate,
         location: formData.location,
@@ -95,14 +111,13 @@ export default function CreateEventPage() {
         soldCount: 0,
         organizerId: profile.id,
         createdAt: now,
-
         updatedAt: now,
       });
 
       toast.success("Event created successfully");
       router.push("/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Failed to create event");
+      toast.error(error?.message || "Failed to create event");
     } finally {
       setLoading(false);
     }
@@ -134,7 +149,11 @@ export default function CreateEventPage() {
               Event Cover Image
             </label>
             <div
-              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors ${imagePreview ? "border-purple-300 bg-purple-50/30" : "border-slate-300 bg-slate-50 hover:border-purple-400"}`}
+              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors ${
+                imagePreview
+                  ? "border-purple-300 bg-purple-50/30"
+                  : "border-slate-300 bg-slate-50 hover:border-purple-400"
+              }`}
             >
               <div className="space-y-2 text-center w-full">
                 {imagePreview ? (
