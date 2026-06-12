@@ -4,9 +4,10 @@ export interface UserProfile {
   name: string;
   role: "admin" | "organizer" | "attendee";
   createdAt: number;
-  photoUrl?: string;
+  profileImage?: string;
   phone?: string;
   address?: string;
+  ageRange?: string;
 }
 
 export interface Event {
@@ -24,6 +25,7 @@ export interface Event {
   updatedAt: number;
   imageUrl?: string;
   eventType: "concert" | "conference" | "workshop" | "festival" | "other";
+  ageDiference?: boolean;
 }
 
 export interface Ticket {
