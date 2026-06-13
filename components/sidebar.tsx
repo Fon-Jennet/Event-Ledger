@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,6 +16,14 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
 
 export function Sidebar() {
   const { profile, logOut } = useAuth();
@@ -32,7 +40,57 @@ export function Sidebar() {
     }`;
   };
 
+  const [unreadChatsCount, setUnreadChatsCount] = useState(0);
+
   const closeSidebar = () => setIsOpen(false);
+
+  const getLastReadTs = (chatDoc: any, userId: string) => {
+    const lastReadBy = chatDoc?.lastReadBy || {};
+    const v = lastReadBy[userId];
+    return typeof v === "number" ? v : 0;
+  };
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setUnreadChatsCount(0);
+      return;
+    }
+
+    let q: any;
+    const chatsRef = collection(db, "chats");
+
+    // Mirror the inbox filters
+    if (profile.role === "admin") {
+      q = query(chatsRef, orderBy("updatedAt", "desc"));
+    } else if (profile.role === "organizer") {
+      q = query(
+        chatsRef,
+        where("organizerId", "==", profile.id),
+        orderBy("updatedAt", "desc"),
+      );
+    } else {
+      q = query(
+        chatsRef,
+        where("participants", "array-contains", profile.id),
+        orderBy("updatedAt", "desc"),
+      );
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      let count = 0;
+      snapshot.docs.forEach((docSnap: any) => {
+        const data = docSnap.data() as any;
+        const updatedAt =
+          typeof data.updatedAt === "number" ? data.updatedAt : 0;
+        const lastReadTs = getLastReadTs(data, profile.id);
+        if (updatedAt > lastReadTs) count += 1;
+      });
+      setUnreadChatsCount(count);
+    });
+
+    return () => unsubscribe();
+  }, [profile?.id, profile?.role]);
+
   const isProfileActive = pathname === "/profile";
 
   const handleSignOut = async () => {
@@ -138,13 +196,23 @@ export function Sidebar() {
             </Link>
           )}
 
-          {(profile?.role === "admin" || profile?.role === "organizer") && (
+          {(profile?.role === "admin" ||
+            profile?.role === "organizer" ||
+            profile?.role === "attendee") && (
             <Link
               href="/chat"
               onClick={closeSidebar}
               className={getLinkClasses("/chat")}
             >
-              <MessageSquare className="w-5 h-5" /> Chats
+              <div className="flex items-center gap-3 w-full">
+                <MessageSquare className="w-5 h-5" />
+                <span>Chats</span>
+                {unreadChatsCount > 0 && (
+                  <span className="ml-auto text-[10px] font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full">
+                    {unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+                  </span>
+                )}
+              </div>
             </Link>
           )}
         </nav>
