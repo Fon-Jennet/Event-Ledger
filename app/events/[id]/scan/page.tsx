@@ -15,13 +15,7 @@ import {
 } from "firebase/firestore";
 import { Loader2, CheckCircle, XCircle, QrCode, Search } from "lucide-react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const QrReader = dynamic(
-  // @ts-expect-error - react-qr-reader exports vary by build
-  () => import("react-qr-reader").then((m) => m.default || m.QrReader),
-  { ssr: false },
-);
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 export default function TicketScannerPage({
   params,
@@ -139,7 +133,6 @@ export default function TicketScannerPage({
       const eventData: any = eventSnap.data();
 
       // Validity window: ticket is valid until 24h AFTER event dateline (event.date)
-      // If the event's dateline is missing, we consider it valid to avoid locking out tickets.
       const eventDateMs: number | undefined =
         typeof eventData?.date === "number" ? eventData.date : undefined;
 
@@ -208,9 +201,21 @@ export default function TicketScannerPage({
 
             <div className="rounded-lg border border-slate-200 overflow-hidden bg-slate-50 mb-4">
               <div className="relative w-full aspect-[4/3]">
-                <QrCode className="absolute left-4 top-4 w-6 h-6 text-slate-400" />
-                <div className="absolute inset-0 p-2">
-                  <QrReader />
+                <QrCode className="absolute left-4 top-4 w-6 h-6 text-slate-400 z-10" />
+                <div className="absolute inset-0 p-2 overflow-hidden flex items-center justify-center">
+                  <Scanner
+                    onScan={(result) => {
+                      // Supports both array responses (v2) and standard string responses (v1)
+                      if (Array.isArray(result) && result.length > 0) {
+                        validateAndScanTicket(result[0].rawValue);
+                      } else if (typeof result === "string") {
+                        validateAndScanTicket(result);
+                      }
+                    }}
+                    onError={(error) => {
+                      console.error("Camera error:", error);
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -285,22 +290,6 @@ export default function TicketScannerPage({
                 </p>
               </div>
             )}
-
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h4 className="font-bold text-slate-900 mb-2">Rules</h4>
-              <ul className="text-sm text-slate-600 space-y-2 list-disc pl-5">
-                <li>Scans only work for tickets that match this event.</li>
-                <li>
-                  Already-scanned tickets show: “This ticket has already been
-                  scanned”.
-                </li>
-                <li>Invalid tickets show: “Invalid Ticket”.</li>
-                <li>
-                  Valid scans show: “{`{Username}`} has paid for {`{eventname}`}{" "}
-                  and the ticket is still valid.”
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>

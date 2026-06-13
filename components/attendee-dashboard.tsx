@@ -5,7 +5,7 @@ import { Search, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Event } from "@/lib/types";
 import { DashboardCalendar } from "./dashboard-calendar";
@@ -16,20 +16,25 @@ export function AttendeeDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "events"),
-      // Show events created system-wide by both admins and organisers.
-      // Avoid only filtering to "upcoming"; exclude cancelled events.
-      where("status", "!=", "cancelled"),
-    );
+    // Removed the where("status", "!=", "cancelled") clause
+    // to prevent Firestore from hiding events that are missing the status field.
+    const q = query(collection(db, "events"));
 
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
-        const fetchedEvents = querySnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() }) as Event,
-        );
-        fetchedEvents.sort((a, b) => a.date - b.date);
+        const fetchedEvents = querySnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }) as Event)
+          // 1. Filter out the cancelled events on the client side instead
+          .filter((event) => event.status !== "cancelled");
+
+        // 2. Safely parse dates for sorting, regardless of string or number format
+        fetchedEvents.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateA - dateB;
+        });
+
         setEvents(fetchedEvents);
         setLoading(false);
       },
@@ -90,7 +95,11 @@ export function AttendeeDashboard() {
                         />
                       ) : (
                         <div
-                          className={`absolute inset-0 opacity-90 group-hover:scale-105 transition-transform duration-500 ${event.title.length % 2 === 0 ? "bg-gradient-to-br from-purple-500 to-indigo-600" : "bg-gradient-to-br from-blue-500 to-cyan-600"}`}
+                          className={`absolute inset-0 opacity-90 group-hover:scale-105 transition-transform duration-500 ${
+                            event.title.length % 2 === 0
+                              ? "bg-gradient-to-br from-purple-500 to-indigo-600"
+                              : "bg-gradient-to-br from-blue-500 to-cyan-600"
+                          }`}
                         ></div>
                       )}
                       <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-slate-700 uppercase tracking-widest leading-none truncate max-w-[120px]">
