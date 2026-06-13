@@ -110,6 +110,7 @@ export default function CreateEventPage() {
         capacity: Number(formData.capacity),
         soldCount: 0,
         organizerId: profile.id,
+        status: "upcoming",
         createdAt: now,
         updatedAt: now,
       });

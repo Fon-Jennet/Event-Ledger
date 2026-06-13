@@ -5,7 +5,7 @@ import { Search, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Event } from "@/lib/types";
 import { DashboardCalendar } from "./dashboard-calendar";
@@ -16,25 +16,30 @@ export function AttendeeDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const q = query(
-          collection(db, "events"),
-          where("status", "==", "upcoming"),
-        );
-        const querySnapshot = await getDocs(q);
+    const q = query(
+      collection(db, "events"),
+      // Show events created system-wide by both admins and organisers.
+      // Avoid only filtering to "upcoming"; exclude cancelled events.
+      where("status", "!=", "cancelled"),
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
         const fetchedEvents = querySnapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() }) as Event,
         );
         fetchedEvents.sort((a, b) => a.date - b.date);
         setEvents(fetchedEvents);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
         setLoading(false);
-      }
-    };
-    fetchEvents();
+      },
+      (error) => {
+        console.error("Error fetching events:", error);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -57,7 +62,7 @@ export function AttendeeDashboard() {
       <div className="grid grid-cols-[1fr_300px] gap-8">
         <div>
           <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">
-            Upcoming Events
+            Upcoming events
           </h3>
           {loading ? (
             <div className="flex justify-center p-8">
@@ -133,11 +138,13 @@ export function AttendeeDashboard() {
             </div>
           )}
         </div>
-        <div>
-          <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">
-            Calendar Map
-          </h3>
-          <DashboardCalendar events={events} userRole="attendee" />
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">
+              Calendar map
+            </h3>
+            <DashboardCalendar events={events} userRole="attendee" />
+          </div>
         </div>
       </div>
     </DashboardLayout>

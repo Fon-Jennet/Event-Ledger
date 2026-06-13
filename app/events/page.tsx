@@ -119,7 +119,7 @@ export default function EventsPage() {
         day: "numeric",
         year: "numeric",
       }),
-      timeString: date.toLocaleTimeString("en-US", {
+      timeString: date.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       }),

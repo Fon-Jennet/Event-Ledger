@@ -46,6 +46,22 @@ export default function ChatPage({
   useEffect(() => {
     if (!profile || !chatId) return;
 
+    // Mark this chat as read as soon as the user enters the chat
+    const markRead = async () => {
+      try {
+        const chatRef = doc(db, "chats", chatId);
+        const ts = Date.now();
+        await updateDoc(chatRef, {
+          [`lastReadBy.${profile.id}`]: ts,
+        });
+      } catch (e) {
+        // It's okay if the document doesn't have the field yet
+        console.error("Failed to mark chat as read", e);
+      }
+    };
+
+    markRead();
+
     // 1. Point to the specific chat's messages sub-collection
     const q = query(
       collection(db, "chats", chatId, "messages"),

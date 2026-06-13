@@ -5,7 +5,7 @@ import { Plus, Users, Ticket, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Event } from "@/lib/types";
 import { DashboardCalendar } from "./dashboard-calendar";
@@ -18,25 +18,29 @@ export function OrganizerDashboard() {
 
   useEffect(() => {
     if (!profile) return;
-    const fetchEvents = async () => {
-      try {
-        const q = query(
-          collection(db, "events"),
-          where("organizerId", "==", profile.id),
-        );
-        const querySnapshot = await getDocs(q);
+
+    const q = query(
+      collection(db, "events"),
+      where("organizerId", "==", profile.id),
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
         const fetchedEvents = querySnapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() }) as Event,
         );
         fetchedEvents.sort((a, b) => a.date - b.date);
         setEvents(fetchedEvents);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
         setLoading(false);
-      }
-    };
-    fetchEvents();
+      },
+      (error) => {
+        console.error("Error fetching events:", error);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, [profile]);
 
   const totalSales = events.reduce(
@@ -55,41 +59,41 @@ export function OrganizerDashboard() {
 
   return (
     <DashboardLayout title="My Events" badges={["Organizer Mode"]}>
-      <div className="grid grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-1">
             Total Sales
           </p>
-          <h3 className="text-2xl font-black text-slate-900 font-mono">
+          <h3 className="text-xl font-black text-slate-900 font-mono">
             FCFA {totalSales.toLocaleString()}
           </h3>
           <div className="mt-2 text-green-600 text-xs flex items-center font-bold">
             From active events
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-1">
             Active Events
           </p>
-          <h3 className="text-2xl font-black text-slate-900 font-mono">
+          <h3 className="text-xl font-black text-slate-900 font-mono">
             {activeEventsCount}
           </h3>
           <div className="mt-2 text-purple-600 text-xs flex items-center font-bold">
             Live right now
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-1">
             Tickets Sold
           </p>
-          <h3 className="text-2xl font-black text-slate-900 font-mono">
+          <h3 className="text-xl font-black text-slate-900 font-mono">
             {totalSoldCount}
           </h3>
           <div className="mt-2 text-slate-400 text-xs flex items-center">
             Total across all events
           </div>
         </div>
-        <div className="bg-purple-600 p-6 rounded-xl border border-purple-500 shadow-sm text-white flex flex-col justify-center items-center text-center">
+        <div className="bg-purple-600 p-4 rounded-xl border border-purple-500 shadow-sm text-white flex flex-col justify-center items-center text-center">
           <Link
             href="/events/new"
             className="hover:scale-105 transition-transform flex flex-col items-center group"
