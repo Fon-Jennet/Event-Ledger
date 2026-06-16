@@ -107,8 +107,8 @@ export function Sidebar() {
     <>
       {/* Mobile Menu Toggle */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle menu"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-label={isOpen ? "Close menu" : "Open menu"}
         className="fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg border border-slate-800 shadow-lg md:hidden"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

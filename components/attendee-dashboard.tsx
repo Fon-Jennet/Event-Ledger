@@ -64,11 +64,12 @@ export function AttendeeDashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-[1fr_300px] gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 lg:gap-8">
         <div>
           <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">
             Upcoming events
           </h3>
+
           {loading ? (
             <div className="flex justify-center p-8">
               <div className="animate-pulse w-8 h-8 bg-purple-600 rounded-full"></div>
@@ -78,7 +79,7 @@ export function AttendeeDashboard() {
               No upcoming events found. Please check back later!
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {events.map((event) => {
                 const eventDate = new Date(event.date);
                 return (
@@ -147,7 +148,7 @@ export function AttendeeDashboard() {
             </div>
           )}
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 lg:pl-1">
           <div>
             <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest mb-4">
               Calendar map
