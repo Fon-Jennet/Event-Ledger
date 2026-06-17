@@ -36,6 +36,8 @@ export interface Ticket {
   status: "valid" | "scanned" | "cancelled";
   price: number;
   proofDocumentUrl?: string;
+  userName: string;
+  
 }
 
 

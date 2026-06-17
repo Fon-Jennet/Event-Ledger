@@ -10,10 +10,24 @@ import {
   getDocs,
   doc,
   getDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Ticket, Event } from "@/lib/types";
-import { Calendar, MapPin, Loader2, ArrowRight, X } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Loader2,
+  ArrowRight,
+  X,
+  MoreVertical,
+  Trash2,
+  Download,
+  User,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
 
@@ -25,63 +39,67 @@ export default function TicketsPage() {
   const { user, profile } = useAuth();
   const [tickets, setTickets] = useState<TicketWithEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  // NEW: State to manage the open dialog
   const [selectedTicket, setSelectedTicket] = useState<TicketWithEvent | null>(
     null,
   );
+  const [printingId, setPrintingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchTickets = async () => {
     if (!user) return;
-    const fetchTickets = async () => {
-      try {
-        const q = query(
-          collection(db, "tickets"),
-          where("userId", "==", user.uid),
-        );
-        const querySnapshot = await getDocs(q);
-
-        const fetchedTickets: TicketWithEvent[] = [];
-        for (const ticketDoc of querySnapshot.docs) {
-          const ticketData = {
-            id: ticketDoc.id,
-            ...ticketDoc.data(),
-          } as TicketWithEvent;
-
-          const eventRef = doc(db, "events", ticketData.eventId);
-          const eventSnap = await getDoc(eventRef);
-          if (eventSnap.exists()) {
-            ticketData.event = {
-              id: eventSnap.id,
-              ...eventSnap.data(),
-            } as Event;
-          }
-          fetchedTickets.push(ticketData);
+    try {
+      const q = query(
+        collection(db, "tickets"),
+        where("userId", "==", user.uid),
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedTickets: TicketWithEvent[] = [];
+      for (const ticketDoc of querySnapshot.docs) {
+        const ticketData = {
+          id: ticketDoc.id,
+          ...ticketDoc.data(),
+        } as TicketWithEvent;
+        const eventRef = doc(db, "events", ticketData.eventId);
+        const eventSnap = await getDoc(eventRef);
+        if (eventSnap.exists()) {
+          ticketData.event = { id: eventSnap.id, ...eventSnap.data() } as Event;
         }
-
+        fetchedTickets.push(ticketData);
+      }
+      setTickets(
         fetchedTickets.sort(
           (a, b) => (a.event?.date || 0) - (b.event?.date || 0),
-        );
-        setTickets(fetchedTickets);
-      } catch (error) {
-        console.error("Error fetching tickets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTickets();
   }, [user]);
 
-  if (!profile || profile.role !== "attendee") {
-    return (
-      <DashboardLayout title="My Tickets">
-        <div className="p-8 text-center text-slate-500">
-          Only attendees can purchase and view tickets.
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const handleDelete = async (ticketId: string) => {
+    if (!confirm("Delete this ticket permanently?")) return;
+    try {
+      await deleteDoc(doc(db, "tickets", ticketId));
+      setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      setSelectedTicket(null);
+    } catch (e) {
+      alert("Error deleting ticket");
+    }
+  };
 
-  // Helper component to render the ticket structure to avoid code duplication
+  const handleDownload = (id: string) => {
+    setPrintingId(id);
+    setTimeout(() => {
+      window.print();
+      setPrintingId(null);
+    }, 150);
+  };
+
   const TicketCard = ({
     ticket,
     isLarge = false,
@@ -89,90 +107,160 @@ export default function TicketsPage() {
     ticket: TicketWithEvent;
     isLarge?: boolean;
   }) => {
+    const [menuOpen, setMenuOpen] = useState(false);
     const isScanned = ticket.status === "scanned";
+
+    const statusConfig: Record<string, string> = {
+      valid: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      scanned: "bg-slate-100 text-slate-500 border-slate-200",
+      pending: "bg-amber-100 text-amber-700 border-amber-200",
+      cancelled: "bg-red-100 text-red-700 border-red-200",
+    };
+
+    const currentStatus = statusConfig[ticket.status] || statusConfig.valid;
+
     return (
       <div
-        className={`bg-white rounded-xl border flex flex-col overflow-hidden shadow-sm transition-all w-full h-full ${isScanned ? "border-slate-200 opacity-60" : "border-purple-200"} ${isLarge ? "md:flex-row" : ""}`}
+        id={ticket.id}
+        className={`relative bg-white rounded-3xl border-2 transition-all duration-300 ${
+          printingId === ticket.id ? "print-target" : ""
+        } ${isLarge ? "shadow-2xl" : "shadow-sm hover:shadow-xl hover:-translate-y-1"} 
+        ${isScanned ? "grayscale-[0.5] opacity-80" : "border-purple-100 hover:border-purple-400"} 
+        flex flex-col overflow-hidden w-full h-full ${isLarge ? "md:flex-row" : ""}`}
       >
-        {ticket.event?.imageUrl && (
-          <div
-            className={`${isLarge ? "md:w-2/5 md:h-auto h-48" : "h-24 w-full"} bg-slate-200 shrink-0 border-b md:border-b-0 md:border-r border-slate-200`}
+        <div className="absolute top-4 right-4 z-30 print:hidden">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
+            className="p-2 bg-white/90 backdrop-blur-md shadow-md hover:bg-purple-600 hover:text-white rounded-xl transition-all"
           >
-            <img
-              src={ticket.event.imageUrl}
-              alt="Event Banner"
-              className="w-full h-full object-cover"
-            />
+            <MoreVertical className="w-5 h-5" />
+          </button>
+
+          {menuOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setMenuOpen(false)}
+              ></div>
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-2xl py-2 z-20">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    handleDownload(ticket.id);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-purple-50 flex items-center gap-3 transition-colors"
+                >
+                  <Download className="w-4 h-4 text-purple-600" /> Download PDF
+                </button>
+                <hr className="my-1 border-slate-50" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    handleDelete(ticket.id);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Ticket
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div
+          className={`${isLarge ? "md:w-2/5 h-64 md:h-auto" : "h-32"} relative overflow-hidden bg-slate-200 shrink-0 print-image`}
+        >
+          <img
+            src={ticket.event?.imageUrl}
+            className="w-full h-full object-cover"
+            alt=""
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+          <div
+            className={`absolute top-4 left-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-1.5 ${currentStatus}`}
+          >
+            {ticket.status === "scanned" ? (
+              <Clock className="w-3 h-3" />
+            ) : ticket.status === "cancelled" ? (
+              <AlertCircle className="w-3 h-3" />
+            ) : (
+              <CheckCircle2 className="w-3 h-3" />
+            )}
+            {ticket.status}
           </div>
-        )}
-        <div className={`flex flex-1 ${isLarge ? "flex-col md:flex-row" : ""}`}>
-          <div
-            className={`p-6 flex-1 border-r border-dashed border-slate-300 relative flex flex-col justify-between ${isLarge ? "md:p-10" : ""}`}
-          >
-            <div className="absolute top-0 right-0 -mt-2 -mr-2 w-4 h-4 bg-slate-50 rounded-full border-b border-l border-slate-300"></div>
-            <div className="absolute bottom-0 right-0 -mb-2 -mr-2 w-4 h-4 bg-slate-50 rounded-full border-t border-l border-slate-300"></div>
+        </div>
+
+        <div className="flex flex-1 flex-col md:flex-row print-content">
+          <div className="p-6 md:p-8 flex-1 flex flex-col justify-between border-r border-dashed border-slate-200 relative print-details">
+            <div className="absolute -top-3 -right-3 w-6 h-6 bg-slate-50 rounded-full border border-slate-200 print:hidden" />
+            <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-50 rounded-full border border-slate-200 print:hidden" />
 
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span
-                  className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${isScanned ? "bg-slate-100 text-slate-500" : "bg-purple-100 text-purple-700"}`}
-                >
-                  {ticket.status}
+              <div className="flex items-center gap-2 text-purple-600 mb-2">
+                <User className="w-4 h-4" />
+                <span className="text-[11px] font-black uppercase tracking-widest">
+                  Pass Holder
                 </span>
               </div>
+              <h2
+                className={`${isLarge ? "text-3xl" : "text-xl"} font-extrabold text-slate-900 mb-4`}
+              >
+                {ticket.userName || profile?.name}
+              </h2>
               <h3
-                className={`${isLarge ? "text-3xl" : "text-lg"} font-bold text-slate-900 mb-1`}
+                className={`${isLarge ? "text-2xl" : "text-lg"} font-bold text-slate-800 leading-tight mb-1`}
               >
-                {ticket.event?.title || "Unknown Event"}
+                {ticket.event?.title}
               </h3>
-              <p
-                className={`${isLarge ? "text-sm" : "text-xs"} text-slate-500 font-medium`}
-              >
-                FCFA {ticket.price} Paid
+              <p className="text-purple-600 font-black text-sm">
+                FCFA {ticket.price.toLocaleString()}
               </p>
             </div>
 
-            <div
-              className={`space-y-2 mt-4 font-medium text-slate-600 ${isLarge ? "text-lg mt-8" : "text-sm"}`}
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-slate-400" />
-                {ticket.event
-                  ? new Date(ticket.event.date).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "TBA"}
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">
+                  Date
+                </p>
+                <div className="flex items-center gap-2 text-slate-700 text-xs font-bold">
+                  <Calendar className="w-3.5 h-3.5 text-purple-500" />
+                  {ticket.event
+                    ? new Date(ticket.event.date).toLocaleDateString()
+                    : "TBA"}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-slate-400" />
-                <span className="truncate">
-                  {ticket.event?.location || "TBA"}
-                </span>
+              <div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">
+                  Location
+                </p>
+                <div className="flex items-center gap-2 text-slate-700 text-xs font-bold truncate">
+                  <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                  {ticket.event?.location}
+                </div>
               </div>
             </div>
           </div>
 
           <div
-            className={`p-6 bg-slate-50 flex flex-col items-center justify-center relative ${isLarge ? "md:w-72 w-full py-12" : "w-48 flex-shrink-0"}`}
+            className={`p-8 bg-slate-50/50 flex flex-col items-center justify-center gap-3 print:bg-white ${isLarge ? "md:w-72" : "w-44"} qr-section`}
           >
-            <div className="absolute top-0 left-0 -mt-2 -ml-2 w-4 h-4 bg-slate-50 rounded-full border-b border-r border-slate-300"></div>
-            <div className="absolute bottom-0 left-0 -mb-2 -ml-2 w-4 h-4 bg-slate-50 rounded-full border-t border-r border-slate-300"></div>
-
-            <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-200 mb-3">
-              <QRCodeSVG
-                value={ticket.id}
-                size={isLarge ? 200 : 100}
-                className={isScanned ? "opacity-50" : ""}
-              />
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0">
+              <QRCodeSVG value={ticket.id} size={50} />
             </div>
-            <p
-              className={`${isLarge ? "text-sm" : "text-[10px]"} font-mono text-slate-400 select-all`}
-            >
-              {ticket.id.slice(0, 8).toUpperCase()}
-            </p>
+            <div className="text-center">
+              <p className="text-[10px] font-mono text-slate-400 uppercase">
+                Verification ID
+              </p>
+              <p className="text-[10px] font-mono font-bold text-slate-600 uppercase">
+                {ticket.id.slice(0, 14)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -180,59 +268,143 @@ export default function TicketsPage() {
   };
 
   return (
-    <DashboardLayout title="My Tickets" badges={[`${tickets.length} Total`]}>
-      {loading ? (
-        <div className="flex justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-        </div>
-      ) : tickets.length === 0 ? (
-        <div className="text-center p-12 bg-white rounded-xl border border-slate-200">
-          <p className="text-slate-500 mb-4">
-            You haven't purchased any tickets yet.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold transition-colors"
-          >
-            Discover Events <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative">
-          {tickets.map((ticket) => (
-            <div
-              key={ticket.id}
-              onClick={() => setSelectedTicket(ticket)}
-              className="cursor-zoom-in hover:scale-[1.02] transition-transform"
-            >
-              <TicketCard ticket={ticket} />
-            </div>
-          ))}
-        </div>
-      )}
+    <DashboardLayout title="My Tickets" badges={[`${tickets.length} Active`]}>
+      <style>{`
+        @media print {
+          /* Prevent blank pages */
+          @page {
+            size: portrait;
+            margin: 0; 
+          }
+          
+          /* Lock viewport */
+          html, body {
+            height: 100vh !important;
+            width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            background: white !important;
+          }
 
-      {/* NEW: Dialog Overlay for Selected Ticket */}
+          /* Hide UI */
+          body * { visibility: hidden !important; box-shadow: none !important; }
+          .print-target, .print-target * { visibility: visible !important; }
+          
+          /* Full page wrapper with padding for margins */
+          .print-target { 
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            transform: none !important; 
+            border: none !important;
+            border-radius: 0 !important;
+            display: block !important; 
+            background: white !important;
+            margin: 0 !important;
+            padding: 40px !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Hide background image */
+          .print-image { display: none !important; }
+          
+          /* Container positioning */
+          .print-content {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: relative !important;
+          }
+
+          /* Align text completely to the left margin */
+          .print-details {
+            border: none !important;
+            text-align: left !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            display: block !important;
+          }
+          
+          /* Clean professional alignment for nested flex items */
+          .print-details .flex { justify-content: flex-start !important; }
+          .print-details .grid { 
+            display: flex !important; 
+            justify-content: flex-start !important; 
+            gap: 4rem !important; 
+            margin-top: 2rem !important;
+          }
+          
+          /* Lock QR EXACTLY at 50% height and centered horizontally, scaled 2x larger */
+          .qr-section {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) scale(4) !important;
+            background: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: auto !important;
+            border: none !important;
+          }
+
+          .print\\:hidden { display: none !important; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-[#fcfcfd] -m-8 p-8">
+        {loading ? (
+          <div className="flex justify-center p-20">
+            <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="max-w-md mx-auto text-center p-12 bg-white rounded-3xl shadow-xl border border-slate-100 mt-10">
+            <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">No Tickets</h2>
+            <p className="text-slate-500 mb-8 text-sm">
+              You haven't booked any events yet.
+            </p>
+            <Link
+              href="/"
+              className="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center justify-center gap-2"
+            >
+              Browse Events <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {tickets.map((ticket) => (
+              <div
+                key={ticket.id}
+                onClick={() => setSelectedTicket(ticket)}
+                className="cursor-pointer"
+              >
+                <TicketCard ticket={ticket} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {selectedTicket && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-slate-900/60 backdrop-blur-sm cursor-zoom-out"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm"
           onClick={() => setSelectedTicket(null)}
         >
           <div
-            className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => {
-              // Allows clicking the ticket to close it too, as requested
-              e.stopPropagation();
-              setSelectedTicket(null);
-            }}
+            className="w-full max-w-5xl"
+            onClick={(e) => e.stopPropagation()}
           >
             <TicketCard ticket={selectedTicket} isLarge={true} />
+            <p className="text-white/40 text-center mt-6 text-sm">
+              Click outside to close
+            </p>
           </div>
-          <button
-            onClick={() => setSelectedTicket(null)}
-            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
       )}
     </DashboardLayout>

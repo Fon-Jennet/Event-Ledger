@@ -12,7 +12,7 @@ export function DashboardLayout({
   badges?: string[];
 }) {
   return (
-    <div className="w-full min-h-screen bg-slate-50 flex overflow-hidden font-sans text-slate-900">
+    <div className="w-full h-screen bg-slate-50 flex overflow-hidden font-sans text-slate-900">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
         <Header title={title} badges={badges} />

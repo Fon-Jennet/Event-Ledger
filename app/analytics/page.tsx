@@ -154,9 +154,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2"></div>
-          </div>
+          
         </div>
       )}
     </DashboardLayout>

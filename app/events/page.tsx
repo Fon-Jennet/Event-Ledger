@@ -119,7 +119,7 @@ export default function EventsPage() {
         day: "numeric",
         year: "numeric",
       }),
-      timeString: date.toLocaleTimeString("en-US", {
+      timeString: date.toLocaleTimeString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -137,10 +137,10 @@ export default function EventsPage() {
     return (
       <div
         key={event.id}
-        className="bg-white w-100 h-full rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group"
+        className="bg-white w-full h-full rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300 flex flex-col group"
       >
-        {/* Event Image Header */}
-        <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
+        {/* Event Image Header - Responsive height */}
+        <div className="relative h-40 sm:h-48 w-full bg-slate-100 overflow-hidden shrink-0">
           {event.imageUrl ? (
             <img
               src={event.imageUrl}
@@ -176,27 +176,28 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Event Details Body */}
-        <div className="p-5 flex-1 flex flex-col">
-          <h3 className="font-bold text-lg text-slate-900 mb-3 line-clamp-2 leading-tight group-hover:text-purple-600 transition-colors">
+        {/* Event Details Body - Responsive padding */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col">
+          <h3 className="font-bold text-base sm:text-lg text-slate-900 mb-3 line-clamp-2 leading-tight group-hover:text-purple-600 transition-colors">
             {event.title}
           </h3>
 
           <div className="space-y-2 mb-6">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Calendar className="w-4 h-4 text-purple-500 shrink-0" />
-              <span className="break-words">
-                {dateString} <span className="text-slate-400 mx-1">•</span>{" "}
-                {timeString}
-              </span>
+            <div className="flex items-start gap-2 text-sm text-slate-600">
+              <Calendar className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+              <div className="flex flex-wrap items-center gap-x-1.5">
+                <span>{dateString}</span>
+                <span className="text-slate-400 hidden sm:inline">•</span>
+                <span>{timeString}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <MapPin className="w-4 h-4 text-purple-500 shrink-0" />
-              <span className="truncate">{event.location}</span>
+            <div className="flex items-start gap-2 text-sm text-slate-600">
+              <MapPin className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+              <span className="line-clamp-2">{event.location}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Banknote className="w-4 h-4 text-purple-500 shrink-0" />
-              <span className="font-semibold text-slate-900">
+              <span className="font-semibold text-slate-900 truncate">
                 {event.price > 0
                   ? `FCFA ${event.price.toLocaleString()}`
                   : "Free event"}
@@ -219,38 +220,40 @@ export default function EventsPage() {
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${salesPercentage >= 100 ? "bg-emerald-500" : "bg-purple-500"}`}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  salesPercentage >= 100 ? "bg-emerald-500" : "bg-purple-500"
+                }`}
                 style={{ width: `${salesPercentage}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Card Actions Footer */}
-        <div className="grid grid-cols-4 divide-x divide-slate-100 border-t border-slate-100 bg-slate-50">
+        {/* Card Actions Footer - Now 2x2 on Mobile, 1x4 on Desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-4 border-t border-slate-100 bg-slate-50">
           <Link
             href={`/events/${event.id}/tickets`}
-            className="flex items-center justify-center gap-1 py-3 text-[10px] font-bold text-blue-600 hover:bg-blue-50"
+            className="flex items-center justify-center gap-1.5 py-3 text-[11px] sm:text-xs font-bold text-blue-600 hover:bg-blue-50 border-b md:border-b-0 border-r border-slate-100 transition-colors"
           >
             <Users className="w-3.5 h-3.5" /> TICKETS
           </Link>
           <Link
             href={`/events/${event.id}/scan`}
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-purple-600 hover:bg-purple-100 transition-colors"
+            className="flex items-center justify-center gap-1.5 py-3 text-[11px] sm:text-xs font-bold text-purple-600 hover:bg-purple-100 border-b md:border-b-0 md:border-r border-slate-100 transition-colors"
           >
-            <QrCode className="w-4 h-4" /> SCAN
+            <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> SCAN
           </Link>
           <Link
             href={`/events/${event.id}/edit`}
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+            className="flex items-center justify-center gap-1.5 py-3 text-[11px] sm:text-xs font-bold text-slate-600 hover:bg-slate-200 border-r border-slate-100 transition-colors"
           >
-            <Edit className="w-4 h-4" /> EDIT
+            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> EDIT
           </Link>
           <button
             onClick={() => handleDelete(event.id)}
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+            className="flex items-center justify-center gap-1.5 py-3 text-[11px] sm:text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
           >
-            <Trash2 className="w-4 h-4" /> DELETE
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> DELETE
           </button>
         </div>
       </div>
@@ -264,7 +267,7 @@ export default function EventsPage() {
       title={profile.role === "admin" ? "All events" : "My events"}
       badges={[`${events.length} total`]}
     >
-      <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
         <p className="text-sm text-slate-500">
           Manage and monitor your event portfolio.
         </p>
@@ -277,18 +280,18 @@ export default function EventsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
+        <div className="flex justify-center items-center h-64 px-4">
           <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
         </div>
       ) : !hasAnyEvents ? (
-        <div className="text-center p-8 sm:p-16 bg-white rounded-2xl border border-slate-200 border-dashed overflow-hidden">
+        <div className="text-center p-6 sm:p-12 md:p-16 bg-white rounded-2xl border border-slate-200 border-dashed overflow-hidden mx-auto max-w-2xl">
           <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="w-8 h-8 text-purple-400" />
           </div>
           <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
             No events found
           </h3>
-          <p className="text-slate-500 mb-6 max-w-sm mx-auto text-sm sm:text-base">
+          <p className="text-slate-500 mb-6 max-w-sm mx-auto text-sm sm:text-base px-4">
             You haven't created any events yet. Get started by setting up your
             first event.
           </p>
@@ -302,30 +305,30 @@ export default function EventsPage() {
       ) : (
         <div className="space-y-10 pb-12 overflow-x-hidden">
           <section className="space-y-4">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 px-1">
               Upcoming events
             </h3>
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 px-1">
                 No upcoming events to display.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {upcomingEvents.map((event) => renderEventCard(event))}
               </div>
             )}
           </section>
 
           <section className="space-y-4">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 px-1">
               Past events
             </h3>
             {pastEvents.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 px-1">
                 No past events to display.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {pastEvents.map((event) => renderEventCard(event))}
               </div>
             )}
