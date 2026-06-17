@@ -62,6 +62,9 @@ export default function ChatPage({
 
     markRead();
 
+    // TODO: enforce access control via Firestore rules.
+    // UI-level guards are optional, but Firestore rules are required for security.
+
     // 1. Point to the specific chat's messages sub-collection
     const q = query(
       collection(db, "chats", chatId, "messages"),

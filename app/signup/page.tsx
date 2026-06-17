@@ -255,25 +255,6 @@ function SignupForm() {
                       />
                     </div>
 
-                    {role === "attendee" && (
-                      <div className="transition-all duration-200">
-                        <label className="block text-sm font-medium text-slate-700">
-                          Age Range
-                        </label>
-                        <select
-                          required={role === "attendee"}
-                          value={ageRange}
-                          onChange={(e) => setAgeRange(e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-slate-300 bg-white rounded-lg shadow-sm sm:text-sm text-slate-800"
-                        >
-                          <option value="" disabled>
-                            Select your age group
-                          </option>
-                          <option value="under-18">Under 18</option>
-                          <option value="18+">Adult</option>
-                        </select>
-                      </div>
-                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700">
@@ -327,20 +308,7 @@ function SignupForm() {
                         className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm sm:text-sm"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700">
-                        Email address
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                        />
-                      </div>
-                    </div>
+                   
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700">
@@ -354,32 +322,7 @@ function SignupForm() {
                         className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm sm:text-sm"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700">
-                        Password
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="password"
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSigningIn}
-                      className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {isSigningIn ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        "Sign up"
-                      )}
-                    </button>
+                 
                   </form>
                   <div>
                     <button

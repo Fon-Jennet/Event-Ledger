@@ -7,6 +7,28 @@ service cloud.firestore {
     
     function isSignedIn() { return request.auth != null; }
 
+    // ---- Chats (private) ----
+    // Chats collection structure (from code):
+    // /chats/{chatId}
+    //   organizerId: string
+    //   participants: string[]
+    //   ...
+    //   /messages/{messageId}
+
+    function isChatParticipant(chatDoc) {
+      return chatDoc.data.participants != null && request.auth.uid in chatDoc.data.participants;
+    }
+
+    function isChatOrganizer(chatDoc) {
+      return chatDoc.data.organizerId == request.auth.uid;
+    }
+
+    function canReadChat(chatDoc) {
+      // Admins are handled client-side; security enforcement still blocks by participant/organizer.
+      // If you need true admin bypass, add a users/{uid}.role check here.
+      return isChatParticipant(chatDoc) || isChatOrganizer(chatDoc);
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
@@ -25,6 +47,20 @@ service cloud.firestore {
       allow update: if isSignedIn();
     }
 
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && canReadChat(get(/databases/$(database)/documents/chats/$(chatId)));
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && canReadChat(get(/databases/$(database)/documents/chats/$(chatId)));
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && canReadChat(get(/databases/$(database)/documents/chats/$(chatId)));
+        allow create: if isSignedIn() && canReadChat(get(/databases/$(database)/documents/chats/$(chatId)));
+        allow update, delete: if false;
+      }
+    }
+
+
+    // Legacy rule (unused by current UI)
     match /global_chat/{chatId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();

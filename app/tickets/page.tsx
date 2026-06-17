@@ -94,11 +94,10 @@ export default function TicketsPage() {
 
   const handleDownload = (id: string) => {
     setPrintingId(id);
-    // Give state a moment to update before opening print dialog
     setTimeout(() => {
       window.print();
       setPrintingId(null);
-    }, 100);
+    }, 150);
   };
 
   const TicketCard = ({
@@ -111,7 +110,6 @@ export default function TicketsPage() {
     const [menuOpen, setMenuOpen] = useState(false);
     const isScanned = ticket.status === "scanned";
 
-    // Dynamic Status Colors (Type safe)
     const statusConfig: Record<string, string> = {
       valid: "bg-emerald-100 text-emerald-700 border-emerald-200",
       scanned: "bg-slate-100 text-slate-500 border-slate-200",
@@ -130,7 +128,6 @@ export default function TicketsPage() {
         ${isScanned ? "grayscale-[0.5] opacity-80" : "border-purple-100 hover:border-purple-400"} 
         flex flex-col overflow-hidden w-full h-full ${isLarge ? "md:flex-row" : ""}`}
       >
-        {/* MENU - Hidden on Print */}
         <div className="absolute top-4 right-4 z-30 print:hidden">
           <button
             onClick={(e) => {
@@ -163,6 +160,7 @@ export default function TicketsPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setMenuOpen(false);
                     handleDelete(ticket.id);
                   }}
                   className="w-full text-left px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
@@ -174,9 +172,8 @@ export default function TicketsPage() {
           )}
         </div>
 
-        {/* IMAGE SECTION */}
         <div
-          className={`${isLarge ? "md:w-2/5 h-64 md:h-auto" : "h-32"} relative overflow-hidden bg-slate-200 shrink-0`}
+          className={`${isLarge ? "md:w-2/5 h-64 md:h-auto" : "h-32"} relative overflow-hidden bg-slate-200 shrink-0 print-image`}
         >
           <img
             src={ticket.event?.imageUrl}
@@ -199,10 +196,8 @@ export default function TicketsPage() {
           </div>
         </div>
 
-        {/* CONTENT SECTION */}
-        <div className="flex flex-1 flex-col md:flex-row">
-          <div className="p-6 md:p-8 flex-1 flex flex-col justify-between border-r border-dashed border-slate-200 relative">
-            {/* Notch Decorations */}
+        <div className="flex flex-1 flex-col md:flex-row print-content">
+          <div className="p-6 md:p-8 flex-1 flex flex-col justify-between border-r border-dashed border-slate-200 relative print-details">
             <div className="absolute -top-3 -right-3 w-6 h-6 bg-slate-50 rounded-full border border-slate-200 print:hidden" />
             <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-50 rounded-full border border-slate-200 print:hidden" />
 
@@ -252,12 +247,11 @@ export default function TicketsPage() {
             </div>
           </div>
 
-          {/* QR SECTION */}
           <div
-            className={`p-8 bg-slate-50/50 flex flex-col items-center justify-center gap-3 print:bg-white ${isLarge ? "md:w-72" : "w-44"}`}
+            className={`p-8 bg-slate-50/50 flex flex-col items-center justify-center gap-3 print:bg-white ${isLarge ? "md:w-72" : "w-44"} qr-section`}
           >
-            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-              <QRCodeSVG value={ticket.id} size={isLarge ? 180 : 120} />
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0">
+              <QRCodeSVG value={ticket.id} size={50} />
             </div>
             <div className="text-center">
               <p className="text-[10px] font-mono text-slate-400 uppercase">
@@ -277,29 +271,86 @@ export default function TicketsPage() {
     <DashboardLayout title="My Tickets" badges={[`${tickets.length} Active`]}>
       <style>{`
         @media print {
-          /* 1. Hide everything on the page */
-          body * { visibility: hidden !important; shadow: none !important; }
+          /* Prevent blank pages */
+          @page {
+            size: portrait;
+            margin: 0; 
+          }
           
-          /* 2. Only show the ticket marked as print-target */
-          .print-target, .print-target * { visibility: visible !important; }
-          
-          /* 3. Center the ticket perfectly in the PDF */
-          .print-target { 
-            position: fixed !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 90% !important;
-            max-width: 750px !important;
-            border: 2px solid #e2e8f0 !important;
-            display: flex !important;
-            flex-direction: column !important;
+          /* Lock viewport */
+          html, body {
+            height: 100vh !important;
+            width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
             background: white !important;
-            box-shadow: none !important;
           }
 
-          /* Adjust layout for print to ensure the QR section is prominent */
-          .print-target img { max-height: 250px !important; }
+          /* Hide UI */
+          body * { visibility: hidden !important; box-shadow: none !important; }
+          .print-target, .print-target * { visibility: visible !important; }
+          
+          /* Full page wrapper with padding for margins */
+          .print-target { 
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            transform: none !important; 
+            border: none !important;
+            border-radius: 0 !important;
+            display: block !important; 
+            background: white !important;
+            margin: 0 !important;
+            padding: 40px !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Hide background image */
+          .print-image { display: none !important; }
+          
+          /* Container positioning */
+          .print-content {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: relative !important;
+          }
+
+          /* Align text completely to the left margin */
+          .print-details {
+            border: none !important;
+            text-align: left !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            display: block !important;
+          }
+          
+          /* Clean professional alignment for nested flex items */
+          .print-details .flex { justify-content: flex-start !important; }
+          .print-details .grid { 
+            display: flex !important; 
+            justify-content: flex-start !important; 
+            gap: 4rem !important; 
+            margin-top: 2rem !important;
+          }
+          
+          /* Lock QR EXACTLY at 50% height and centered horizontally, scaled 2x larger */
+          .qr-section {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) scale(4) !important;
+            background: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: auto !important;
+            border: none !important;
+          }
+
           .print\\:hidden { display: none !important; }
         }
       `}</style>
