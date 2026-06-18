@@ -109,7 +109,7 @@ export function Sidebar() {
       <button
         onClick={() => setIsOpen((v) => !v)}
         aria-label={isOpen ? "Close menu" : "Open menu"}
-        className="fixed top-4 left-4 z-50 p-2 bg-slate-900 text-white rounded-lg border border-slate-800 shadow-lg md:hidden"
+        className="fixed top-0 left-0 mt-4 ml-4 z-[60] p-2 bg-slate-900 text-white rounded-lg border border-slate-800 shadow-lg md:hidden"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
