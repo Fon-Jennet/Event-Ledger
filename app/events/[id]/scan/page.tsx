@@ -25,7 +25,6 @@ export default function TicketScannerPage({
   const eventId = unwrappedParams.id;
   const { profile } = useAuth();
 
-  const [ticketId, setTicketId] = useState("");
   const [loading, setLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<{
@@ -34,7 +33,7 @@ export default function TicketScannerPage({
     ticket?: any;
   } | null>(null);
 
-  // Reusable verification logic
+  // Reusable verification logic (QR decodedText == ticket document id)
   const verifyTicket = useCallback(
     async (id: string) => {
       if (!id.trim()) return;
@@ -87,6 +86,7 @@ export default function TicketScannerPage({
           scannedAt: new Date().toISOString(),
         });
 
+        // IMPORTANT: Name should be the purchase-time value stored on the ticket doc.
         setResult({
           status: "success",
           message: "Ticket verified and scanned successfully!",
@@ -100,17 +100,10 @@ export default function TicketScannerPage({
         setResult({ status: "error", message: "Error verifying ticket." });
       } finally {
         setLoading(false);
-        setTicketId("");
       }
     },
     [eventId],
   );
-
-  // Handle manual form submission
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    verifyTicket(ticketId);
-  };
 
   // QR Scanner Effect
   useEffect(() => {
@@ -169,7 +162,7 @@ export default function TicketScannerPage({
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm text-center">
           <h2 className="text-xl font-bold text-slate-900 mb-2">Scan Ticket</h2>
           <p className="text-sm text-slate-500 mb-6">
-            Use your camera to scan the QR code or enter the ID manually.
+            Use your camera to scan the QR code to verify the ticket.
           </p>
 
           {/* Camera Viewport */}
@@ -213,29 +206,19 @@ export default function TicketScannerPage({
               </div> */}
             </div>
 
-            {/* <form onSubmit={handleManualSubmit} className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={ticketId}
-                  onChange={(e) => setTicketId(e.target.value)}
-                  placeholder="Ticket ID..."
-                  className="w-full pl-12 pr-4 py-3 text-center font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
-                />
-              </div>
+            <div className="space-y-4">
               <button
-                disabled={loading || !ticketId.trim()}
-                type="submit"
+                disabled={loading}
+                type="button"
                 className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Verify Manually"
+                  "Scan the QR code"
                 )}
               </button>
-            </form> */}
+            </div>
           </div>
         </div>
 

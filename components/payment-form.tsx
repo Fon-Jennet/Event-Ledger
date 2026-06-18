@@ -9,6 +9,7 @@ import {
   increment,
   collection,
   addDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -32,6 +33,24 @@ export function PaymentForm({
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
+  const createNotification = async (payload: {
+    userId: string;
+    title: string;
+    message: string;
+    type: "sale" | "alert" | "system" | "message";
+    read?: boolean;
+  }) => {
+    const notifRef = collection(db, "notifications");
+    await addDoc(notifRef, {
+      userId: payload.userId,
+      title: payload.title,
+      message: payload.message,
+      type: payload.type,
+      read: payload.read ?? false,
+      createdAt: Date.now(),
+    });
+  };
+
   // 2. The Polling Function: Checks the status every 3 seconds
   const checkPaymentStatus = async (reference: string) => {
     try {
@@ -48,9 +67,34 @@ export function PaymentForm({
       } else if (data.status === "FAILED") {
         setLoading(false);
         setStatusMessage("");
-        toast.error("Payment failed or was cancelled by the user.");
+
+        // Campay may return various failure reasons. We map common insufficient-funds cases.
+        const rawFailureText = JSON.stringify(data ?? {}).toLowerCase();
+        const hasInsufficientFunds =
+          rawFailureText.includes("insufficient") ||
+          rawFailureText.includes("not enough") ||
+          rawFailureText.includes("low balance") ||
+          rawFailureText.includes("balance") ||
+          rawFailureText.includes("funds");
+
+        if (hasInsufficientFunds) {
+          toast.error(
+            "Insufficient funds. Please check your balance and try again.",
+          );
+        } else {
+          toast.error("Payment failed or was cancelled by the user.");
+        }
+
+        if (user) {
+          await createNotification({
+            userId: user.uid,
+            title: "Payment Failed",
+            message: `Your payment for ${eventTitle} failed or was cancelled.`,
+            type: "alert",
+            read: false,
+          });
+        }
       } else {
-        // If PENDING, wait 3 seconds and check again
         setTimeout(() => checkPaymentStatus(reference), 3000);
       }
     } catch (error) {
@@ -64,24 +108,53 @@ export function PaymentForm({
     if (!user) return;
 
     try {
+      const now = Date.now();
+
       // Create the ticket
       const ticketRef = collection(db, "tickets");
       const newTicket = await addDoc(ticketRef, {
         eventId,
         userId: user.uid,
-        purchasedAt: Date.now(),
+        purchasedAt: now,
         status: "valid",
         price: amount,
       });
 
+      // Read current event snapshot so we can detect sell-out
+      const eventSnap = await getDoc(doc(db, "events", eventId));
+      const eventData: any = eventSnap.exists() ? eventSnap.data() : null;
+
+      const previousSoldCount: number = eventData?.soldCount ?? 0;
+      const capacity: number = eventData?.capacity ?? 0;
+
       // Increment event sold count
       await updateDoc(doc(db, "events", eventId), {
         soldCount: increment(1),
-        updatedAt: Date.now(),
+        updatedAt: now,
       });
 
-      // Optional: Call your WhatsApp API route here
-      // await fetch('/api/whatsapp', { method: 'POST', body: JSON.stringify({ phone, eventTitle, ticketId: newTicket.id }) });
+      const newSoldCount = previousSoldCount + 1;
+      const isSoldOutNow = capacity > 0 && newSoldCount >= capacity;
+
+      // Organizer notification (paid flow)
+      if (isSoldOutNow && organizerId) {
+        await createNotification({
+          userId: organizerId,
+          title: "Event Sold Out!",
+          message: `Congratulations! ${eventTitle} is now fully sold out!`,
+          type: "system",
+          read: false,
+        });
+      }
+
+      // Attendee notification (paid success)
+      await createNotification({
+        userId: user.uid,
+        title: "Ticket Purchased",
+        message: `Your ticket for ${eventTitle} was purchased successfully. Ticket ID: ${newTicket.id}`,
+        type: "sale",
+        read: false,
+      });
 
       toast.success("Ticket purchased successfully!");
       router.push("/tickets");
@@ -90,6 +163,16 @@ export function PaymentForm({
       toast.error(
         "Payment received, but ticket generation failed. Contact support.",
       );
+
+      if (user) {
+        await createNotification({
+          userId: user.uid,
+          title: "Ticket Purchase Failed",
+          message: `We received your payment for ${eventTitle}, but ticket generation failed. Please contact support.`,
+          type: "alert",
+          read: false,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -103,7 +186,7 @@ export function PaymentForm({
     }
 
     setLoading(true);
-    setStatusMessage("Check your phone to confirm payment...");
+    setStatusMessage("Check your phone to confirm payment");
 
     try {
       const res = await fetch("/api/payment", {
@@ -118,7 +201,6 @@ export function PaymentForm({
       const data = await res.json();
 
       if (data.reference) {
-        // Start checking the status
         checkPaymentStatus(data.reference);
       } else {
         throw new Error("No reference returned");
@@ -127,6 +209,16 @@ export function PaymentForm({
       setLoading(false);
       setStatusMessage("");
       toast.error("Failed to initiate payment.");
+
+      if (user) {
+        await createNotification({
+          userId: user.uid,
+          title: "Payment Initiation Failed",
+          message: `We couldn't start the payment for ${eventTitle}. Please try again.`,
+          type: "alert",
+          read: false,
+        });
+      }
     }
   };
 

@@ -14,41 +14,9 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-xs leading-relaxed">
-            Making event management simple, scalable, and secure for everyone
-            around the world. Based in Cameroon.
+            Making event management simple, scalable, and secure for everyone in Buea.
           </p>
         </div>
-        {/* <div>
-          <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">
-            Product
-          </h4>
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="#features"
-                className="hover:text-purple-400 transition-colors"
-              >
-                Features
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="#pricing"
-                className="hover:text-purple-400 transition-colors"
-              >
-                Pricing
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="#testimonials"
-                className="hover:text-purple-400 transition-colors"
-              >
-                Testimonials
-              </Link>
-            </li>
-          </ul>
-        </div> */}
         <div>
           <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-xs">
             Legal

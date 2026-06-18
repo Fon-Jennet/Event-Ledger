@@ -46,6 +46,25 @@ export default function ChatPage({
   useEffect(() => {
     if (!profile || !chatId) return;
 
+    // Mark this chat as read as soon as the user enters the chat
+    const markRead = async () => {
+      try {
+        const chatRef = doc(db, "chats", chatId);
+        const ts = Date.now();
+        await updateDoc(chatRef, {
+          [`lastReadBy.${profile.id}`]: ts,
+        });
+      } catch (e) {
+        // It's okay if the document doesn't have the field yet
+        console.error("Failed to mark chat as read", e);
+      }
+    };
+
+    markRead();
+
+    // TODO: enforce access control via Firestore rules.
+    // UI-level guards are optional, but Firestore rules are required for security.
+
     // 1. Point to the specific chat's messages sub-collection
     const q = query(
       collection(db, "chats", chatId, "messages"),
@@ -122,7 +141,7 @@ export default function ChatPage({
   }
 
   return (
-    <DashboardLayout title="Message Organizer" badges={["Private Chat"]}>
+    <DashboardLayout title="Messages" badges={["Private Chat"]}>
       <div className="max-w-4xl mx-auto h-[600px] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="flex-1 p-6 overflow-y-auto bg-slate-50 space-y-4">
           {loading ? (

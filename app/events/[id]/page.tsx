@@ -56,6 +56,25 @@ export default function EventDetailsPage({
   );
   const [proofDocument, setProofDocument] = useState<File | null>(null);
 
+  const uploadProofToCloudinary = async () => {
+    if (!proofDocument) return null;
+    const form = new FormData();
+    form.append("file", proofDocument);
+    form.append("folder", `ticket-proofs/${eventId}/${user?.uid || "unknown"}`);
+
+    const res = await fetch("/api/cloudinary/upload", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || "Proof upload failed");
+    }
+
+    return data?.secureUrl as string;
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -94,14 +113,21 @@ export default function EventDetailsPage({
     setPurchasing(true);
     try {
       const ticketRef = collection(db, "tickets");
+
+      let proofDocumentUrl: string | undefined;
+      if (proofDocument && ageCategory) {
+        proofDocumentUrl = (await uploadProofToCloudinary()) || undefined;
+      }
+
       await addDoc(ticketRef, {
         eventId: event.id,
         userId: user.uid,
         purchasedAt: Date.now(),
         status: "valid",
         price: currentPrice,
-        ...(proofDocument &&
-          ageCategory && { ageCategory, hasProofDocument: true }),
+        ...(proofDocument && ageCategory
+          ? { ageCategory, hasProofDocument: true, proofDocumentUrl }
+          : {}),
       });
 
       await updateDoc(doc(db, "events", event.id), {

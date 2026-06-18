@@ -35,9 +35,11 @@ export interface Ticket {
   purchasedAt: number;
   status: "valid" | "scanned" | "cancelled";
   price: number;
+  proofDocumentUrl?: string;
   userName: string;
   
 }
+
 
 export interface AppNotification {
   id: string;

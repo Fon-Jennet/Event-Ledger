@@ -77,7 +77,7 @@ export default function UsersPage() {
   }
 
   return (
-    <DashboardLayout title="User Management" badges={[`${users.length} Total`]}>
+    <DashboardLayout title="User Management" badges={[]}>
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
