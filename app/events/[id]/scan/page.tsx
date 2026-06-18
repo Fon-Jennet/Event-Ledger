@@ -206,14 +206,14 @@ export default function TicketScannerPage({
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-200"></span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
+              {/* <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-2 text-slate-400">
                   Or manual entry
                 </span>
-              </div>
+              </div> */}
             </div>
 
-            <form onSubmit={handleManualSubmit} className="space-y-4">
+            {/* <form onSubmit={handleManualSubmit} className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
@@ -235,7 +235,7 @@ export default function TicketScannerPage({
                   "Verify Manually"
                 )}
               </button>
-            </form>
+            </form> */}
           </div>
         </div>
 
