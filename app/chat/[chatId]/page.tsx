@@ -141,7 +141,7 @@ export default function ChatPage({
   }
 
   return (
-    <DashboardLayout title="Message Organizer" badges={["Private Chat"]}>
+    <DashboardLayout title="Messages" badges={["Private Chat"]}>
       <div className="max-w-4xl mx-auto h-[600px] bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="flex-1 p-6 overflow-y-auto bg-slate-50 space-y-4">
           {loading ? (

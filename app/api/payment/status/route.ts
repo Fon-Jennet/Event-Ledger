@@ -21,7 +21,14 @@ export async function POST(req: Request) {
     });
 
     const data = await response.json();
-    return NextResponse.json(data);
+
+    // Pass through fields from Campay response so the UI can show more specific errors.
+    // We intentionally keep the payload flexible because the provider's schema may vary.
+    return NextResponse.json({
+      ...data,
+      _provider: "campay",
+      _reference: reference,
+    });
     
   } catch (error) {
     return NextResponse.json(
