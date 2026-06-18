@@ -50,14 +50,14 @@ export function AttendeeDashboard() {
   return (
     <DashboardLayout title="Discover Events" badges={[]}>
       <div className="flex gap-4 items-center mb-8">
-        <div className="relative flex-1">
+        {/* <div className="relative flex-1">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search events, organizers, or locations..."
             className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
           />
-        </div>
+        </div> */}
         <button className="bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 flex items-center gap-2 shadow-sm">
           <Calendar className="w-4 h-4 text-slate-500" />
           Pick Date

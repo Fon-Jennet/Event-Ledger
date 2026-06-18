@@ -199,11 +199,11 @@ export default function TicketScannerPage({
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-200"></span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
+              {/* <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-2 text-slate-400">
                   Or manual entry
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <div className="space-y-4">
